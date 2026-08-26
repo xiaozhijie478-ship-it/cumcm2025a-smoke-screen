@@ -1,0 +1,21 @@
+{
+  "dt": 0.05,
+  "fine_dt": 0.005,
+  "refine_below": 11.0,
+  "preset": "immediate",
+  "cover_end": 13.942236249790831,
+  "distance_guard": 1e-08,
+  "time_guard": 1e-12,
+  "n_phi_per_rim": 8,
+  "center_cells": 4,
+  "target": 8.0,
+  "root_upper": 12.99223624979096,
+  "global_upper": 8.0,
+  "processed": 9890,
+  "open": 0,
+  "pruned": 9891,
+  "infeasible": 0,
+  "deepest": 41,
+  "target_certified": true,
+  "worst_box": null
+}

@@ -1,0 +1,14 @@
+{
+  "grid_step": 0.0001,
+  "grid_points": 669993,
+  "lipschitz_constant": 3.1322225504499763,
+  "grid_guard": 0.00015661112752249882,
+  "sample_argmax_time": 29.290100000000002,
+  "sample_max_span": 18.039084414553216,
+  "fy2_possible_contribution_span_upper": 18.039241026680738,
+  "single_duration_uppers": {
+    "FY1": 4.589,
+    "FY3": 3.25
+  },
+  "q4_complete_joint_upper_under_single_connectedness": 25.87824102668074
+}

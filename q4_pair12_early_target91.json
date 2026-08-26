@@ -1,0 +1,24 @@
+{
+  "dt": 0.1,
+  "n_phi_per_rim": 8,
+  "center_cells": 4,
+  "names": [
+    "FY1",
+    "FY2"
+  ],
+  "time_range": [
+    0.0,
+    13.94223625
+  ],
+  "connected_single_cap": true,
+  "target": 9.1,
+  "root_upper": 13.900000000000066,
+  "global_upper": 9.1,
+  "processed": 6112,
+  "open": 0,
+  "pruned": 6113,
+  "infeasible": 0,
+  "deepest": 42,
+  "target_certified": true,
+  "worst_box": null
+}

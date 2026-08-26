@@ -1,0 +1,395 @@
+{
+  "source": "C:\\Users\\Allen\\Desktop\\数模\\cumcm2025a\\q5_activated_plan.json",
+  "threshold": 0.005,
+  "history": [
+    {
+      "cycle": 1,
+      "uav": "FY1",
+      "accepted": false,
+      "before_total": 30.200536409644865,
+      "candidate_total": 30.188373147326452,
+      "improvement": -0.01216326231841336,
+      "optimizer_success": false,
+      "optimizer_evaluations": 250
+    },
+    {
+      "cycle": 1,
+      "uav": "FY2",
+      "accepted": false,
+      "before_total": 30.200536409644865,
+      "candidate_total": 30.2021059743149,
+      "improvement": 0.0015695646700351062,
+      "optimizer_success": false,
+      "optimizer_evaluations": 222
+    },
+    {
+      "cycle": 1,
+      "uav": "FY3",
+      "accepted": true,
+      "before_total": 30.200536409644865,
+      "candidate_total": 31.675057019503978,
+      "improvement": 1.4745206098591126,
+      "optimizer_success": false,
+      "optimizer_evaluations": 228
+    },
+    {
+      "cycle": 1,
+      "uav": "FY4",
+      "accepted": true,
+      "before_total": 31.675057019503978,
+      "candidate_total": 31.79486110518451,
+      "improvement": 0.11980408568053136,
+      "optimizer_success": false,
+      "optimizer_evaluations": 227
+    },
+    {
+      "cycle": 1,
+      "uav": "FY5",
+      "accepted": true,
+      "before_total": 31.79486110518451,
+      "candidate_total": 32.433653281466285,
+      "improvement": 0.6387921762817754,
+      "optimizer_success": false,
+      "optimizer_evaluations": 238
+    },
+    {
+      "cycle": 2,
+      "uav": "FY1",
+      "accepted": false,
+      "before_total": 32.433653281466285,
+      "candidate_total": 32.42149001657834,
+      "improvement": -0.012163264887945502,
+      "optimizer_success": false,
+      "optimizer_evaluations": 250
+    },
+    {
+      "cycle": 2,
+      "uav": "FY2",
+      "accepted": false,
+      "before_total": 32.433653281466285,
+      "candidate_total": 32.43515812409054,
+      "improvement": 0.0015048426242572077,
+      "optimizer_success": false,
+      "optimizer_evaluations": 229
+    },
+    {
+      "cycle": 2,
+      "uav": "FY3",
+      "accepted": true,
+      "before_total": 32.433653281466285,
+      "candidate_total": 32.981264508558866,
+      "improvement": 0.547611227092581,
+      "optimizer_success": false,
+      "optimizer_evaluations": 235
+    },
+    {
+      "cycle": 2,
+      "uav": "FY4",
+      "accepted": true,
+      "before_total": 32.981264508558866,
+      "candidate_total": 33.122369271309225,
+      "improvement": 0.14110476275035921,
+      "optimizer_success": false,
+      "optimizer_evaluations": 226
+    },
+    {
+      "cycle": 2,
+      "uav": "FY5",
+      "accepted": true,
+      "before_total": 33.122369271309225,
+      "candidate_total": 33.35251977425362,
+      "improvement": 0.23015050294439732,
+      "optimizer_success": false,
+      "optimizer_evaluations": 222
+    }
+  ],
+  "metrics": {
+    "intervals": {
+      "M1": [
+        [
+          4.847156342310796,
+          12.49749982839164
+        ],
+        [
+          13.05266235165179,
+          17.033916182700874
+        ],
+        [
+          22.984320083368495,
+          28.194394275106472
+        ]
+      ],
+      "M2": [
+        [
+          15.628414698147974,
+          19.295324962083768
+        ],
+        [
+          19.32730193063512,
+          23.170127802290825
+        ]
+      ],
+      "M3": [
+        [
+          13.143109299554188,
+          19.671647459898576
+        ],
+        [
+          21.118785863392407,
+          23.600721578328162
+        ]
+      ]
+    },
+    "durations": {
+      "M1": 16.841671508867904,
+      "M2": 7.509736135591499,
+      "M3": 9.010473875280143
+    },
+    "total": 33.36188151973955,
+    "minimum": 7.509736135591499,
+    "simultaneous_intervals": [
+      [
+        15.628414698147974,
+        17.033916182700874
+      ],
+      [
+        22.984320083368495,
+        23.170127802290825
+      ]
+    ],
+    "simultaneous": 1.5913092034752303
+  },
+  "bombs": [
+    {
+      "uav": "FY1",
+      "number": 1,
+      "theta_rad": 3.1389228218900493,
+      "theta_deg": 179.84702991159443,
+      "speed": 140.0,
+      "release_time": 0.0,
+      "release_point": [
+        17800.0,
+        0.0,
+        1800.0
+      ],
+      "delay": 0.0,
+      "explosion_time": 0.0,
+      "explosion_point": [
+        17800.0,
+        0.0,
+        1800.0
+      ],
+      "assigned_missile": "M1"
+    },
+    {
+      "uav": "FY1",
+      "number": 2,
+      "theta_rad": 3.1389228218900493,
+      "theta_deg": 179.84702991159443,
+      "speed": 140.0,
+      "release_time": 2.461855597034026,
+      "release_point": [
+        17455.3414447822,
+        0.920182522663527,
+        1800.0
+      ],
+      "delay": 4.941303809307703,
+      "explosion_time": 7.403159406341729,
+      "explosion_point": [
+        16763.561376991056,
+        2.767123265237395,
+        1680.3592316541938
+      ],
+      "assigned_missile": "M1"
+    },
+    {
+      "uav": "FY1",
+      "number": 3,
+      "theta_rad": 3.1389228218900493,
+      "theta_deg": 179.84702991159443,
+      "speed": 140.0,
+      "release_time": 5.009571462670299,
+      "release_point": [
+        17098.66249480091,
+        1.872457552561909,
+        1800.0
+      ],
+      "delay": 5.858496340286938,
+      "explosion_time": 10.868067802957237,
+      "explosion_point": [
+        16278.47593031487,
+        4.062222845016536,
+        1631.8223010911383
+      ],
+      "assigned_missile": "M1"
+    },
+    {
+      "uav": "FY2",
+      "number": 1,
+      "theta_rad": 5.386793585717738,
+      "theta_deg": 308.64053756976966,
+      "speed": 134.27872322197402,
+      "release_time": 8.91158207297729,
+      "release_point": [
+        12747.218176401748,
+        465.3330086986539,
+        1400.0
+      ],
+      "delay": 4.140025365046827,
+      "explosion_time": 13.051607438024117,
+      "explosion_point": [
+        13094.350950155549,
+        31.117734668552202,
+        1316.0149308861676
+      ],
+      "assigned_missile": "M1"
+    },
+    {
+      "uav": "FY3",
+      "number": 1,
+      "theta_rad": 1.2874207652738532,
+      "theta_deg": 73.7637763076944,
+      "speed": 140.0,
+      "release_time": 21.920662672910765,
+      "release_point": [
+        6858.056802693724,
+        -53.50354099414017,
+        700.0
+      ],
+      "delay": 1.0637064072045104,
+      "explosion_time": 22.984369080115275,
+      "explosion_point": [
+        6899.694253732039,
+        89.47603991621008,
+        694.4557905284331
+      ],
+      "assigned_missile": "M1"
+    },
+    {
+      "uav": "FY3",
+      "number": 2,
+      "theta_rad": 1.2874207652738532,
+      "theta_deg": 73.7637763076944,
+      "speed": 140.0,
+      "release_time": 22.920687109806824,
+      "release_point": [
+        6897.201503004223,
+        80.9161390219615,
+        700.0
+      ],
+      "delay": 9.14531869570441e-05,
+      "explosion_time": 22.92077856299378,
+      "explosion_point": [
+        6897.205082824339,
+        80.92843182969091,
+        699.9999999590179
+      ],
+      "assigned_missile": "M1"
+    },
+    {
+      "uav": "FY4",
+      "number": 1,
+      "theta_rad": 4.69831662397527,
+      "theta_deg": 269.19371336993635,
+      "speed": 111.70945738727346,
+      "release_time": 3.587094292370162,
+      "release_point": [
+        10994.361219008078,
+        1599.3273191250214,
+        1800.0
+      ],
+      "delay": 10.848576847298009,
+      "explosion_time": 14.435671139668171,
+      "explosion_point": [
+        10977.307653104874,
+        387.5586799981618,
+        1223.3110639025208
+      ],
+      "assigned_missile": "M2"
+    },
+    {
+      "uav": "FY4",
+      "number": 2,
+      "theta_rad": 4.69831662397527,
+      "theta_deg": 269.19371336993635,
+      "speed": 111.70945738727346,
+      "release_time": 9.674301726131485,
+      "release_point": [
+        10984.792351625812,
+        919.3960090629989,
+        1800.0
+      ],
+      "delay": 11.444559866998658,
+      "explosion_time": 21.11886159313014,
+      "explosion_point": [
+        10966.801922219982,
+        -358.94297775930454,
+        1158.2080423083498
+      ],
+      "assigned_missile": "M3"
+    },
+    {
+      "uav": "FY5",
+      "number": 1,
+      "theta_rad": 2.0636367103051407,
+      "theta_deg": 118.23767394874588,
+      "speed": 139.99999434843764,
+      "release_time": 11.684087495423801,
+      "release_point": [
+        12226.066861452076,
+        -558.8969041736073,
+        1300.0
+      ],
+      "delay": 1.4541568605028374,
+      "explosion_time": 13.13824435592664,
+      "explosion_point": [
+        12129.74610183514,
+        -379.5427223165657,
+        1289.6385963427574
+      ],
+      "assigned_missile": "M3"
+    },
+    {
+      "uav": "FY5",
+      "number": 2,
+      "theta_rad": 2.0636367103051407,
+      "theta_deg": 118.23767394874588,
+      "speed": 139.99999434843764,
+      "release_time": 12.70691467018253,
+      "release_point": [
+        12158.316611733117,
+        -432.74247331903916,
+        1300.0
+      ],
+      "delay": 0.3024750399501632,
+      "explosion_time": 13.009389710132693,
+      "explosion_point": [
+        12138.281203996507,
+        -395.43551916852334,
+        1299.5516933660151
+      ],
+      "assigned_missile": "M3"
+    },
+    {
+      "uav": "FY5",
+      "number": 3,
+      "theta_rad": 2.0636367103051407,
+      "theta_deg": 118.23767394874588,
+      "speed": 139.99999434843764,
+      "release_time": 19.32057920836195,
+      "release_point": [
+        11720.23925606961,
+        382.9799735096494,
+        1300.0
+      ],
+      "delay": 0.0001883748510672268,
+      "explosion_time": 19.320767583213016,
+      "explosion_point": [
+        11720.226778455097,
+        383.0032074661867,
+        1299.999999826123
+      ],
+      "assigned_missile": "M2"
+    }
+  ]
+}

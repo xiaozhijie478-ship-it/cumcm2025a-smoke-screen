@@ -1,0 +1,6 @@
+numpy>=2.0,<3
+scipy>=1.13,<2
+cvxpy>=1.5,<2
+openpyxl>=3.1,<4
+python-docx>=1.1,<2
+

@@ -1,0 +1,13 @@
+{
+  "dt": 0.05,
+  "n_phi_per_rim": 8,
+  "target": 8.0,
+  "root_upper": 64.59999999999758,
+  "global_upper": 22.399999999999785,
+  "processed": 1000,
+  "open": 963,
+  "pruned": 38,
+  "infeasible": 0,
+  "deepest": 21,
+  "target_certified": false
+}

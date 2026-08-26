@@ -1,0 +1,67 @@
+{
+  "scope": "three independent single-ball full-occlusion windows",
+  "current_total": 11.735130825049858,
+  "strict_upper_total": 11.839,
+  "absolute_gap": 0.1038691749501428,
+  "relative_gap_to_upper": 0.008773475373776738,
+  "certificates": {
+    "FY1": {
+      "current_intervals": [
+        [
+          0.9219232633937904,
+          5.509971519033851
+        ]
+      ],
+      "current_duration": 4.588048255640061,
+      "strict_upper": 4.589,
+      "gap": 0.0009517443599396103,
+      "conic_certificate": {
+        "duration": 4.589,
+        "solves": 927,
+        "pruned": 464,
+        "remaining": 0,
+        "unresolved": 0
+      }
+    },
+    "FY2": {
+      "current_intervals": [
+        [
+          12.986365112826,
+          16.96705738718108
+        ]
+      ],
+      "current_duration": 3.9806922743550786,
+      "strict_upper": 4.0,
+      "gap": 0.019307725644921447,
+      "conic_certificate": {
+        "duration": 4.0,
+        "solves": 201,
+        "pruned": 101,
+        "remaining": 0,
+        "unresolved": 0
+      }
+    },
+    "FY3": {
+      "current_intervals": [
+        [
+          23.05413001778483,
+          26.220520312839547
+        ]
+      ],
+      "current_duration": 3.1663902950547183,
+      "strict_upper": 3.25,
+      "gap": 0.08360970494528175,
+      "conic_certificate": {
+        "duration": 3.25,
+        "solves": 197,
+        "pruned": 99,
+        "remaining": 0,
+        "unresolved": 0
+      }
+    }
+  },
+  "limitations": [
+    "The certificate does not cover time instants that require two balls jointly.",
+    "Interpreting each single-ball total as one interval uses the audited but not analytically proved interval-connectedness property."
+  ]
+}
