@@ -1390,6 +1390,17 @@ def multistart_active_blocks(
             candidate = fixed + decode_mixed_block(uav, labels, result.x)
             audited = metrics(candidate, 0.02, acceptance_points)
             proposals.append((float(audited["total"]), candidate, audited, seed, result))
+            history.append(
+                {
+                    "uav": uav,
+                    "seed": seed,
+                    "before_total": before["total"],
+                    "candidate_total": float(audited["total"]),
+                    "improvement": float(audited["total"]) - before["total"],
+                    "optimizer_success": bool(result.success),
+                    "optimizer_evaluations": int(result.nfev),
+                }
+            )
             print(
                 f"multistart_uav={uav},seed={seed},candidate={audited['total']:.9f},"
                 f"evaluations={result.nfev}",
@@ -1400,18 +1411,10 @@ def multistart_active_blocks(
         accepted = improvement > 0.005
         if accepted:
             active = candidate
-        history.append(
-            {
-                "uav": uav,
-                "accepted": accepted,
-                "seed": seed,
-                "before_total": before["total"],
-                "candidate_total": audited["total"],
-                "improvement": improvement,
-                "optimizer_success": bool(result.success),
-                "optimizer_evaluations": int(result.nfev),
-            }
-        )
+        for entry in history:
+            if entry["uav"] == uav and entry["seed"] == seed:
+                entry["accepted"] = accepted
+                entry["selected"] = True
         print(
             f"multistart_accept_uav={uav},accepted={accepted},improvement={improvement:.9f}",
             flush=True,
@@ -1441,6 +1444,8 @@ def multistart_active_blocks(
         "source": str(plan_file.resolve()),
         "seeds": seeds,
         "threshold": 0.005,
+        "log_version": 2,
+        "log_mode": "per-seed per-uav (3 UAVs x len(seeds) proposals)",
         "history": history,
         "metrics": final,
         "bombs": [strategy_record(item) for item in renumbered],
