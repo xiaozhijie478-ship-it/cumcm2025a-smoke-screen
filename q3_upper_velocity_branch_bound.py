@@ -181,6 +181,7 @@ def contract(
     box: Box,
     required_active: tuple[int, ...] = (),
     theta_range: tuple[float, float] | None = None,
+    explosion_order: tuple[int, ...] = (),
 ) -> Box | None:
     lo, hi = np.array(box.lo, dtype=float), np.array(box.hi, dtype=float)
     if not _contract_velocity(lo, hi, theta_range):
@@ -200,13 +201,28 @@ def contract(
             hi[tau] = min(hi[tau], hi[e])
             if i in required_active:
                 hi[e] = min(hi[e], COVER_END)
-        for left, right in ((0, 1), (1, 2)):
+        for left, right, gap in ((0, 1, 1.0), (1, 2, 1.0), (0, 2, 2.0)):
             e_l, e_r = 2 + left, 2 + right
             t_l, t_r = 5 + left, 5 + right
-            lo[e_r] = max(lo[e_r], 1.0 - hi[t_l] + lo[t_r] + lo[e_l])
-            lo[t_l] = max(lo[t_l], 1.0 - hi[e_r] + lo[t_r] + lo[e_l])
-            hi[t_r] = min(hi[t_r], hi[e_r] + hi[t_l] - lo[e_l] - 1.0)
-            hi[e_l] = min(hi[e_l], hi[e_r] + hi[t_l] - lo[t_r] - 1.0)
+            lo[e_r] = max(lo[e_r], gap - hi[t_l] + lo[t_r] + lo[e_l])
+            lo[t_l] = max(lo[t_l], gap - hi[e_r] + lo[t_r] + lo[e_l])
+            hi[t_r] = min(hi[t_r], hi[e_r] + hi[t_l] - lo[e_l] - gap)
+            hi[e_l] = min(hi[e_l], hi[e_r] + hi[t_l] - lo[t_r] - gap)
+        for left, right in zip(explosion_order, explosion_order[1:]):
+            hi[2 + left] = min(hi[2 + left], hi[2 + right])
+            lo[2 + right] = max(lo[2 + right], lo[2 + left])
+        if explosion_order:
+            rank = {bomb: place for place, bomb in enumerate(explosion_order)}
+            for earlier in range(3):
+                for later in range(earlier + 1, 3):
+                    if (
+                        earlier in rank
+                        and later in rank
+                        and rank[later] < rank[earlier]
+                    ):
+                        gap = float(later - earlier)
+                        lo[5 + earlier] = max(lo[5 + earlier], lo[5 + later] + gap)
+                        hi[5 + later] = min(hi[5 + later], hi[5 + earlier] - gap)
         if np.any(lo > hi + CONTRACT_GUARD):
             return None
     return Box(tuple(lo), tuple(hi), box.depth)
@@ -327,9 +343,10 @@ def upper_duration(
     event_cells: int = 1,
     joint_cell_consistency: bool = False,
     theta_range: tuple[float, float] | None = None,
+    explosion_order: tuple[int, ...] = (),
 ) -> float:
     """Safe duration upper bound for every physical strategy in ``box``."""
-    box = contract(box, required_active, theta_range)
+    box = contract(box, required_active, theta_range, explosion_order)
     if box is None:
         return -math.inf
     half = dt / 2
@@ -420,6 +437,7 @@ def upper_duration(
                     Box(tuple(sub_lo), tuple(sub_hi), box.depth),
                     required_active,
                     theta_range,
+                    explosion_order,
                 )
                 if subbox is None:
                     mask_choices.append(np.zeros((len(times), 1), dtype=np.uint64))
@@ -542,9 +560,12 @@ def branch_bound(
     theta_range: tuple[float, float] | None = None,
     joint_cell_consistency: bool = False,
     strong_branch_below: float | None = None,
+    explosion_order: tuple[int, ...] = (),
 ) -> dict[str, object]:
     points = legacy.witnesses(n_phi)
-    root = contract(root_box(preset, theta_range), required_active, theta_range)
+    root = contract(
+        root_box(preset, theta_range), required_active, theta_range, explosion_order
+    )
     assert root is not None
 
     def bound(box: Box) -> float:
@@ -559,6 +580,7 @@ def branch_bound(
             event_cells,
             joint_cell_consistency,
             theta_range,
+            explosion_order,
         )
         if fine_dt is not None and coarse <= refine_below:
             return min(
@@ -574,14 +596,18 @@ def branch_bound(
                     event_cells,
                     joint_cell_consistency,
                     theta_range,
+                    explosion_order,
                 ),
             )
         return coarse
 
     root_upper = bound(root)
-    heap: list[tuple[float, int, Box]] = [(-root_upper, 0, root)]
+    root_pruned = root_upper <= target
+    heap: list[tuple[float, int, Box]] = (
+        [] if root_pruned else [(-root_upper, 0, root)]
+    )
     counter = itertools.count(1)
-    pruned = infeasible = processed = deepest = 0
+    pruned, infeasible, processed, deepest = int(root_pruned), 0, 0, 0
     while heap and processed < max_nodes:
         neg_upper, _, box = heapq.heappop(heap)
         upper = -neg_upper
@@ -593,7 +619,9 @@ def branch_bound(
             children = []
             rejected = 0
             for child in box.split(index):
-                child = contract(child, required_active, theta_range)
+                child = contract(
+                    child, required_active, theta_range, explosion_order
+                )
                 if child is None:
                     rejected += 1
                 else:
@@ -658,6 +686,7 @@ def branch_bound(
         "event_cells": event_cells,
         "joint_cell_consistency": joint_cell_consistency,
         "strong_branch_below": strong_branch_below,
+        "explosion_order": [index + 1 for index in explosion_order],
         "theta_range_deg": None
         if theta_range is None
         else [math.degrees(value) for value in theta_range],
@@ -686,6 +715,9 @@ def self_test() -> None:
     points = legacy.witnesses(16)
     incumbent = strategy_box(q3.INCUMBENT)
     assert upper_duration(incumbent, 0.01, points) >= 7.650405706
+    assert contract(incumbent, explosion_order=(0, 1)) is not None
+    assert contract(incumbent, explosion_order=(0, 1, 2)) is not None
+    assert contract(incumbent, explosion_order=(2, 1, 0)) is None
     paired = upper_duration(
         incumbent,
         0.01,
@@ -731,6 +763,32 @@ def self_test() -> None:
         assert point is not None
         assert all(a - 1e-9 <= x <= b + 1e-9 for x, a, b in zip(values, root.lo, root.hi))
 
+    # Ordering branches must cover every physical three-bomb point.
+    for _ in range(100):
+        releases = np.array(
+            [
+                rng.uniform(0.0, 2.0),
+                rng.uniform(3.0, 4.0),
+                rng.uniform(5.0, 6.0),
+            ]
+        )
+        delays = np.array(
+            [rng.uniform(0.0, min(T - release, 5.0)) for release in releases]
+        )
+        explosions = releases + delays
+        order = tuple(int(index) for index in np.argsort(explosions))
+        values = (
+            -100.0,
+            0.0,
+            *explosions,
+            *delays,
+        )
+        assert contract(
+            Box(values, values),
+            required_active=(0, 1, 2),
+            explosion_order=order,
+        ) is not None
+
     invalid = Box(
         (-100.0, 0.0, 2.0, 2.5, T, 0.0, 0.0, 0.0),
         (-100.0, 0.0, 2.0, 2.5, T, 0.0, 0.0, 0.0),
@@ -749,6 +807,19 @@ def self_test() -> None:
         event_cells=4,
         joint_cell_consistency=True,
     ) == 0.0
+
+    easy = branch_bound(
+        0.05,
+        None,
+        10.0,
+        16,
+        COVER_END + 1e-9,
+        0,
+        1,
+        "two",
+        theta_range=theta_range,
+    )
+    assert easy["target_certified"] and easy["open"] == 0
 
 
 def main() -> None:
@@ -771,6 +842,10 @@ def main() -> None:
         type=float,
         help="try every non-degenerate split variable below this upper bound",
     )
+    parser.add_argument(
+        "--explosion-order",
+        help="optional comma-separated 1-based nondecreasing explosion order",
+    )
     parser.add_argument("--preset", choices=["full", "immediate", "two"], default="full")
     parser.add_argument(
         "--output",
@@ -790,6 +865,19 @@ def main() -> None:
         if len(theta_values) != 2 or not 0 <= theta_values[0] < theta_values[1] <= 360:
             parser.error("--theta-range-deg must be lower,upper within [0,360]")
         theta_range = tuple(math.radians(value) for value in theta_values)
+    explosion_order = ()
+    if args.explosion_order:
+        explosion_order = tuple(
+            int(item) - 1 for item in args.explosion_order.split(",") if item
+        )
+        if (
+            len(explosion_order) < 2
+            or len(set(explosion_order)) != len(explosion_order)
+            or any(index not in range(3) for index in explosion_order)
+        ):
+            parser.error(
+                "--explosion-order must list 2 or 3 distinct bomb numbers from 1,2,3"
+            )
     result = branch_bound(
         args.dt,
         args.fine_dt,
@@ -806,6 +894,7 @@ def main() -> None:
         theta_range,
         args.joint_cell_consistency,
         args.strong_branch_below,
+        explosion_order,
     )
     args.output.write_text(json.dumps(result, indent=2), encoding="utf-8")
     print(json.dumps(result, indent=2), flush=True)

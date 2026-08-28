@@ -1,0 +1,80 @@
+{
+  "schema": "q3-contributor-domain-certificate-manifest-v1",
+  "date": "2026-08-29",
+  "incumbent_seconds": 7.650405706,
+  "raw_complete_domain_upper_seconds": 11.600000000000126,
+  "reported_outward_rounded_upper_seconds": 11.601,
+  "layers": {
+    "one_contributor": {
+      "upper_seconds": 7.0,
+      "status": "target_certified",
+      "evidence": [
+        "q3_single_cumulative_target70.json"
+      ]
+    },
+    "two_contributors": {
+      "upper_seconds": 8.18,
+      "status": "complete_heading_domain_bounded_target_8_not_fully_certified",
+      "coverage": [
+        {
+          "heading_deg": [
+            0.0,
+            168.75
+          ],
+          "upper_seconds": 8.0,
+          "evidence": "q3_velocity_domain_nodes100_32.json"
+        },
+        {
+          "heading_deg": [
+            168.75,
+            180.0
+          ],
+          "upper_seconds": 8.18,
+          "evidence": "q3_upper_velocity_split_tuned_theta16875_180_nodes1000.json"
+        },
+        {
+          "heading_deg": [
+            180.0,
+            191.25
+          ],
+          "upper_seconds": 8.0,
+          "evidence": "q3_upper_two_theta180_19125_target8.json"
+        },
+        {
+          "heading_deg": [
+            191.25,
+            360.0
+          ],
+          "upper_seconds": 8.0,
+          "evidence": "q3_velocity_domain_nodes100_32.json"
+        }
+      ],
+      "remaining_target_8_domain": {
+        "heading_deg": [
+          177.1875,
+          180.0
+        ],
+        "explosion_order": [
+          1,
+          2
+        ],
+        "evidence": "q3_two_order_12_theta1771875_180_nodes500.json"
+      }
+    },
+    "three_contributors": {
+      "raw_upper_seconds": 11.600000000000126,
+      "reported_outward_rounded_upper_seconds": 11.601,
+      "status": "complete_heading_domain_bounded_target_8_not_fully_certified",
+      "global_evidence": "q3_velocity_three_nodes100_128.json",
+      "remaining_target_8_heading_deg": [
+        168.75,
+        185.625
+      ],
+      "localization_evidence": [
+        "q3_upper_three_theta1575_16875_target8.json",
+        "q3_upper_three_theta185625_19125_target8.json"
+      ]
+    }
+  },
+  "claim_boundary": "The outward-rounded 11.601 s value is a protected numerical upper bound over the complete Q3 domain, not a proof that the incumbent is globally near-optimal."
+}

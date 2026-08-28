@@ -1,0 +1,35 @@
+{
+  "parameterization": "ux_uy_explosion_delay",
+  "dt": 0.05,
+  "fine_dt": 0.005,
+  "refine_below": 10.0,
+  "preset": "two",
+  "cover_end": 13.942236249790831,
+  "distance_guard": 1e-08,
+  "time_guard": 1e-12,
+  "n_phi_per_rim": 16,
+  "center_cells": 4,
+  "single_cumulative_cap": 7.0,
+  "consistent_center_cells": true,
+  "required_active_bombs": [
+    1,
+    2
+  ],
+  "event_cells": 4,
+  "joint_cell_consistency": true,
+  "strong_branch_below": null,
+  "theta_range_deg": [
+    180.0,
+    191.25
+  ],
+  "target": 8.0,
+  "root_upper": 12.600000000000112,
+  "global_upper": 8.0,
+  "processed": 270,
+  "open": 0,
+  "pruned": 271,
+  "infeasible": 0,
+  "deepest": 22,
+  "target_certified": true,
+  "worst_box": null
+}
