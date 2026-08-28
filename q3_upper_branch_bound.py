@@ -28,6 +28,8 @@ TAU_MAX = q3.FREE_FALL_LIMIT
 TIME_RATE = geometry.MISSILE_SPEED + geometry.SMOKE_SINK_SPEED
 DISTANCE_GUARD = 1e-8
 TIME_GUARD = 1e-12
+ROUTE_GUARD = 1e-4
+ROUTE_TIME_EPS = 1e-3
 # FY1 can only move west at 140 m/s while M1 recedes west faster.  Beyond this
 # time even the radius-10 cloud cannot touch any finite missile-target segment.
 MISSILE_VX = geometry.MISSILE_SPEED * geometry.MISSILE_DIRECTION[0]
@@ -57,15 +59,27 @@ class Box:
         )
 
 
-def root_box(preset: str = "full") -> Box:
+def root_box(
+    preset: str = "full",
+    theta_range: tuple[float, float] | None = None,
+) -> Box:
+    theta_lo, theta_hi = theta_range or (0.0, 2 * math.pi)
     if preset == "immediate":
         return Box(
-            (0.0, 140.0, 0.0, 1.0, 2.0, 0.0, 0.0, 0.0),
-            (2 * math.pi, 140.0, 0.0, T - 1.0, T, 0.0, TAU_MAX, TAU_MAX),
+            (theta_lo, 140.0, 0.0, 1.0, 2.0, 0.0, 0.0, 0.0),
+            (theta_hi, 140.0, 0.0, T - 1.0, T, 0.0, TAU_MAX, TAU_MAX),
+        )
+    if preset == "two":
+        # Any physical two-bomb strategy can be embedded by releasing an
+        # inert third bomb at missile impact.  The release-gap contractor then
+        # preserves the complete relevant two-bomb domain.
+        return Box(
+            (theta_lo, 70.0, 0.0, 1.0, T, 0.0, 0.0, 0.0),
+            (theta_hi, 140.0, T - 2.0, T - 1.0, T, TAU_MAX, TAU_MAX, 0.0),
         )
     return Box(
-        (0.0, 70.0, 0.0, 1.0, 2.0, 0.0, 0.0, 0.0),
-        (2 * math.pi, 140.0, T - 2.0, T - 1.0, T, TAU_MAX, TAU_MAX, TAU_MAX),
+        (theta_lo, 70.0, 0.0, 1.0, 2.0, 0.0, 0.0, 0.0),
+        (theta_hi, 140.0, T - 2.0, T - 1.0, T, TAU_MAX, TAU_MAX, TAU_MAX),
     )
 
 
@@ -80,7 +94,7 @@ def point_box() -> Box:
     return Box(tuple(values), tuple(values))
 
 
-def contract(box: Box) -> Box | None:
+def contract(box: Box, required_active: tuple[int, ...] = ()) -> Box | None:
     lo, hi = np.array(box.lo), np.array(box.hi)
 
     lo[0], hi[0] = max(lo[0], 0.0), min(hi[0], 2 * math.pi)
@@ -99,6 +113,13 @@ def contract(box: Box) -> Box | None:
             r, tau = 2 + i, 5 + i
             hi[r] = min(hi[r], T - lo[tau])
             hi[tau] = min(hi[tau], T - lo[r], TAU_MAX)
+        for i in required_active:
+            r, tau = 2 + i, 5 + i
+            # A bomb that contributes before COVER_END must have exploded by
+            # then.  Contract the box around r_i + tau_i <= COVER_END; the
+            # remaining interval box is still an outer relaxation.
+            hi[r] = min(hi[r], COVER_END - lo[tau])
+            hi[tau] = min(hi[tau], COVER_END - lo[r])
     if np.any(lo > hi + 1e-12):
         return None
     return Box(tuple(lo), tuple(hi), box.depth)
@@ -132,7 +153,12 @@ def tau_height_interval(lo: float, hi: float) -> tuple[float, float]:
     return min(values), max(values)
 
 
-def cloud_boxes(box: Box, times: np.ndarray, half_dt: float) -> list[tuple[np.ndarray, np.ndarray, np.ndarray]]:
+def cloud_boxes(
+    box: Box,
+    times: np.ndarray,
+    half_dt: float,
+    required_active: tuple[int, ...] = (),
+) -> list[tuple[np.ndarray, np.ndarray, np.ndarray]]:
     """Return center(t), axis half-widths and possible-active masks."""
     lo, hi = box.lo, box.hi
     result = []
@@ -140,6 +166,8 @@ def cloud_boxes(box: Box, times: np.ndarray, half_dt: float) -> list[tuple[np.nd
         r = (lo[2 + i], hi[2 + i])
         tau = (lo[5 + i], hi[5 + i])
         te = (r[0] + tau[0], r[1] + tau[1])
+        if i in required_active:
+            te = (te[0], min(te[1], COVER_END))
         travel = (lo[1] * te[0], hi[1] * te[1])
         x = product_interval(travel, trig_interval(lo[0], hi[0], True))
         y = product_interval(travel, trig_interval(lo[0], hi[0], False))
@@ -183,6 +211,21 @@ def witnesses(n_phi: int) -> np.ndarray:
     )
 
 
+def center_partition(widths: np.ndarray, center_cells: int) -> list[tuple[np.ndarray, np.ndarray]]:
+    """Return fixed offsets and half-widths for the adaptive center subboxes."""
+    splits = np.ones(3, dtype=int)
+    while int(np.prod(splits)) < center_cells and np.any(widths / splits > 1e-12):
+        splits[int(np.argmax(widths / splits))] *= 2
+    local_half = widths / splits
+    return [
+        (
+            -widths + (2 * np.asarray(index) + 1) * local_half,
+            local_half,
+        )
+        for index in np.ndindex(tuple(int(value) for value in splits))
+    ]
+
+
 def coverage_masks(
     center: np.ndarray,
     half_width: np.ndarray,
@@ -197,15 +240,11 @@ def coverage_masks(
     # Allocate the power-of-two cell budget to the currently longest spatial
     # half-width.  This minimizes the subbox circumsphere greedily and is never
     # tied to one coordinate axis when two or three directions are uncertain.
-    splits = np.ones(3, dtype=int)
-    while int(np.prod(splits)) < center_cells and np.any(widths / splits > 1e-12):
-        splits[int(np.argmax(widths / splits))] *= 2
-    count = int(np.prod(splits))
+    partitions = center_partition(widths, center_cells)
+    count = len(partitions)
     masks = np.zeros((len(missiles), count), dtype=np.uint64)
-    for cell, index in enumerate(np.ndindex(tuple(int(value) for value in splits))):
-        local_half = widths / splits
-        local_center = center.copy()
-        local_center += -widths + (2 * np.asarray(index) + 1) * local_half
+    for cell, (offset, local_half) in enumerate(partitions):
+        local_center = center + offset
         radius = float(np.linalg.norm(local_half))
         for index, point in enumerate(points):
             segment = point - missiles
@@ -221,16 +260,120 @@ def coverage_masks(
     return masks
 
 
-def upper_duration(box: Box, dt: float, points: np.ndarray, center_cells: int = 1) -> float:
+def route_cells_compatible(
+    box: Box,
+    clouds: list[tuple[np.ndarray, np.ndarray, np.ndarray]],
+    partitions: list[list[tuple[np.ndarray, np.ndarray]]],
+    event_edges: list[np.ndarray],
+    choices: tuple[tuple[int, int], ...],
+    relevant: list[int],
+    time0: float,
+) -> bool:
+    """Necessary common-heading/common-speed test for paired cell choices."""
+    speed_lo, speed_hi = box.lo[1], box.hi[1]
+    theta_lo, theta_hi = box.lo[0], box.hi[0]
+    theta_mid = (theta_lo + theta_hi) / 2
+    use_angle = theta_hi - theta_lo < math.pi
+    release_ranges: dict[int, list[float]] = {}
+
+    for ball_index, (center_cell, event_cell) in zip(relevant, choices):
+        offset, local_half = partitions[ball_index][center_cell]
+        center_xy = clouds[ball_index][0][0, :2] + offset[:2] - q2.UAV_0[:2]
+        rect_lo = center_xy - local_half[:2]
+        rect_hi = center_xy + local_half[:2]
+
+        gap = np.maximum(np.maximum(rect_lo, -rect_hi), 0.0)
+        radius_lo = float(np.linalg.norm(gap))
+        corners = np.array(list(itertools.product(*zip(rect_lo, rect_hi))))
+        radius_hi = float(np.max(np.linalg.norm(corners, axis=1)))
+        explosion_lo = float(event_edges[ball_index][event_cell])
+        explosion_hi = float(event_edges[ball_index][event_cell + 1])
+
+        vertical_center = (
+            clouds[ball_index][0][0, 2] + offset[2] + 3.0 * time0
+        )
+        vertical_lo = vertical_center - local_half[2]
+        vertical_hi = vertical_center + local_half[2]
+        energy_lo = q2.UAV_0[2] + 3.0 * explosion_lo - vertical_hi
+        energy_hi = q2.UAV_0[2] + 3.0 * explosion_hi - vertical_lo
+        if energy_hi < -DISTANCE_GUARD:
+            return False
+        delay_lo = math.sqrt(max(0.0, 2.0 * energy_lo / q3.G))
+        delay_hi = math.sqrt(max(0.0, 2.0 * energy_hi / q3.G))
+        delay_lo = max(delay_lo, box.lo[5 + ball_index])
+        delay_hi = min(delay_hi, box.hi[5 + ball_index])
+        if delay_lo > delay_hi + ROUTE_GUARD:
+            return False
+        release_lo = max(box.lo[2 + ball_index], explosion_lo - delay_hi)
+        release_hi = min(box.hi[2 + ball_index], explosion_hi - delay_lo)
+        if release_lo > release_hi + ROUTE_GUARD:
+            return False
+        release_ranges[ball_index] = [release_lo, release_hi]
+
+        # Near immediate explosion, subtracting the 17.8 km UAV coordinate to
+        # recover a millimetre-scale horizontal displacement loses relative
+        # precision.  Skip this optional route filter for that cell; keeping
+        # it can only loosen the upper bound.
+        if explosion_hi <= ROUTE_TIME_EPS:
+            continue
+        speed_lo = max(speed_lo, radius_lo / explosion_hi)
+        if explosion_lo > ROUTE_TIME_EPS:
+            speed_hi = min(speed_hi, radius_hi / explosion_lo)
+        if speed_lo > speed_hi + ROUTE_GUARD:
+            return False
+
+        if use_angle and not (
+            rect_lo[0] <= 0.0 <= rect_hi[0]
+            and rect_lo[1] <= 0.0 <= rect_hi[1]
+        ):
+            angles = np.arctan2(corners[:, 1], corners[:, 0])
+            angles = theta_mid + np.arctan2(
+                np.sin(angles - theta_mid),
+                np.cos(angles - theta_mid),
+            )
+            angle_lo, angle_hi = float(np.min(angles)), float(np.max(angles))
+            if angle_hi - angle_lo <= math.pi:
+                theta_lo = max(theta_lo, angle_lo)
+                theta_hi = min(theta_hi, angle_hi)
+                if theta_lo > theta_hi + ROUTE_GUARD:
+                    return False
+
+    ordered = sorted(release_ranges)
+    for _ in range(len(ordered)):
+        for left, right in zip(ordered, ordered[1:]):
+            gap = float(right - left)
+            release_ranges[right][0] = max(
+                release_ranges[right][0], release_ranges[left][0] + gap
+            )
+            release_ranges[left][1] = min(
+                release_ranges[left][1], release_ranges[right][1] - gap
+            )
+    return all(
+        bounds[0] <= bounds[1] + ROUTE_GUARD
+        for bounds in release_ranges.values()
+    )
+
+
+def upper_duration(
+    box: Box,
+    dt: float,
+    points: np.ndarray,
+    center_cells: int = 1,
+    single_cumulative_cap: float | None = None,
+    consistent_center_cells: bool = False,
+    required_active: tuple[int, ...] = (),
+    event_cells: int = 1,
+    joint_cell_consistency: bool = False,
+) -> float:
     """Safe duration upper bound for all strategies in ``box``."""
-    contracted = contract(box)
+    contracted = contract(box, required_active)
     if contracted is None:
         return -math.inf
     half = dt / 2
     times = np.arange(half, COVER_END, dt)
     widths = np.minimum(times + half, COVER_END) - np.maximum(times - half, 0.0)
     missiles = geometry.MISSILE_0 + geometry.MISSILE_SPEED * times[:, None] * geometry.MISSILE_DIRECTION
-    clouds = cloud_boxes(contracted, times, half)
+    clouds = cloud_boxes(contracted, times, half, required_active)
     possible = np.ones(len(times), dtype=bool)
     threshold = geometry.SMOKE_RADIUS + TIME_RATE * half + DISTANCE_GUARD
 
@@ -262,24 +405,141 @@ def upper_duration(box: Box, dt: float, points: np.ndarray, center_cells: int = 
         if not np.any(possible):
             return 0.0
 
-    if center_cells > 1 and len(points) <= 63 and np.any(possible):
+    consistent_upper: float | None = None
+    masks: list[np.ndarray] | None = None
+    if (center_cells > 1 or event_cells > 1) and len(points) <= 63 and np.any(possible):
         masks = [
             coverage_masks(center, half_width, active, missiles, points, threshold, center_cells)
             for center, half_width, active in clouds
         ]
         full = (np.uint64(1) << np.uint64(len(points))) - np.uint64(1)
-        for time_index in np.flatnonzero(possible):
-            feasible = False
-            for first in masks[0][time_index]:
-                for second in masks[1][time_index]:
-                    partial = first | second
-                    if any((partial | third) == full for third in masks[2][time_index]):
-                        feasible = True
+        if consistent_center_cells:
+            # A fixed physical strategy gives each bomb one time-independent
+            # horizontal center and one time-independent vertical offset; the
+            # cloud then only translates downward by 3t.  It must therefore
+            # remain in one corresponding center subbox for the whole time
+            # axis.  Enumerating one fixed subbox per bomb is still an outer
+            # relaxation inside each subbox, but avoids changing subboxes in
+            # every time bin.
+            consistent_upper = 0.0
+            for cells in itertools.product(*(range(item.shape[1]) for item in masks)):
+                combined = masks[0][:, cells[0]].copy()
+                for ball_index in range(1, len(masks)):
+                    combined |= masks[ball_index][:, cells[ball_index]]
+                feasible = possible & (combined == full)
+                consistent_upper = max(
+                    consistent_upper,
+                    float(np.sum(widths[feasible])),
+                )
+        elif center_cells > 1:
+            for time_index in np.flatnonzero(possible):
+                feasible = False
+                for first in masks[0][time_index]:
+                    for second in masks[1][time_index]:
+                        partial = first | second
+                        if any((partial | third) == full for third in masks[2][time_index]):
+                            feasible = True
+                            break
+                    if feasible:
                         break
-                if feasible:
-                    break
-            possible[time_index] = feasible
-    return float(np.sum(widths[possible]))
+                possible[time_index] = feasible
+    upper = (
+        consistent_upper
+        if consistent_upper is not None
+        else float(np.sum(widths[possible]))
+    )
+    if event_cells > 1 and masks is not None:
+        # A fixed bomb has one explosion time, hence one 20 s active interval.
+        # The ordinary interval mask uses the union over every explosion time
+        # in the parameter box and can implicitly move that interval between
+        # time bins.  Split each explosion-time range, choose one cell per bomb
+        # for the whole axis, and keep the most optimistic combination.
+        event_masks: list[list[np.ndarray]] = []
+        event_active_masks: list[list[np.ndarray]] = []
+        event_edges: list[np.ndarray] = []
+        for i, mask in enumerate(masks):
+            lo_e = contracted.lo[2 + i] + contracted.lo[5 + i]
+            hi_e = contracted.hi[2 + i] + contracted.hi[5 + i]
+            if i in required_active:
+                hi_e = min(hi_e, COVER_END)
+            edges = np.linspace(lo_e, hi_e, event_cells + 1)
+            event_edges.append(edges)
+            any_center = np.bitwise_or.reduce(mask, axis=1)
+            choices = []
+            active_choices = []
+            for cell in range(event_cells):
+                active = (edges[cell] <= times + half + TIME_GUARD) & (
+                    edges[cell + 1] + geometry.SMOKE_LIFETIME
+                    >= times - half - TIME_GUARD
+                )
+                active_choices.append(active)
+                choices.append(np.where(active, any_center, np.uint64(0)))
+            event_masks.append(choices)
+            event_active_masks.append(active_choices)
+        event_upper = 0.0
+        for choices in itertools.product(range(event_cells), repeat=len(masks)):
+            combined = event_masks[0][choices[0]].copy()
+            for ball_index in range(1, len(event_masks)):
+                combined |= event_masks[ball_index][choices[ball_index]]
+            feasible = combined == full
+            event_upper = max(event_upper, float(np.sum(widths[feasible])))
+        upper = min(upper, event_upper)
+        if joint_cell_consistency:
+            # A physical bomb simultaneously belongs to one center subbox and
+            # one explosion-time subcell.  Enumerate those paired choices for
+            # the entire time axis instead of optimizing the two partitions
+            # separately.  Geometry inside each paired cell is still relaxed.
+            relevant = [index for index, mask in enumerate(masks) if np.any(mask)]
+            if not relevant:
+                return 0.0
+            partitions = [
+                center_partition(half_width[0], center_cells)
+                for _, half_width, _ in clouds
+            ]
+            paired_choices = [
+                list(itertools.product(range(masks[index].shape[1]), range(event_cells)))
+                for index in relevant
+            ]
+            paired_upper = 0.0
+            for choices in itertools.product(*paired_choices):
+                if not route_cells_compatible(
+                    contracted,
+                    clouds,
+                    partitions,
+                    event_edges,
+                    choices,
+                    relevant,
+                    float(times[0]),
+                ):
+                    continue
+                center_cell, event_cell = choices[0]
+                first = relevant[0]
+                combined = np.where(
+                    event_active_masks[first][event_cell],
+                    masks[first][:, center_cell],
+                    np.uint64(0),
+                )
+                for choice_index in range(1, len(relevant)):
+                    ball_index = relevant[choice_index]
+                    center_cell, event_cell = choices[choice_index]
+                    combined |= np.where(
+                        event_active_masks[ball_index][event_cell],
+                        masks[ball_index][:, center_cell],
+                        np.uint64(0),
+                    )
+                feasible = combined == full
+                paired_upper = max(
+                    paired_upper,
+                    float(np.sum(widths[feasible])),
+                )
+            upper = min(upper, paired_upper)
+    if single_cumulative_cap is not None:
+        # An independently certified one-ball cumulative upper remains valid
+        # for each bomb.  This matters after branching has proved that only a
+        # subset of the three bombs can be active before COVER_END.
+        possible_balls = sum(bool(np.any(active)) for _, _, active in clouds)
+        upper = min(upper, possible_balls * single_cumulative_cap)
+    return upper
 
 
 def split_index(box: Box) -> int:
@@ -310,15 +570,44 @@ def branch_bound(
     max_nodes: int,
     center_cells: int,
     preset: str,
+    single_cumulative_cap: float | None = None,
+    consistent_center_cells: bool = False,
+    required_active: tuple[int, ...] = (),
+    event_cells: int = 1,
+    theta_range: tuple[float, float] | None = None,
+    joint_cell_consistency: bool = False,
 ) -> dict[str, object]:
     points = witnesses(n_phi)
-    root = contract(root_box(preset))
+    root = contract(root_box(preset, theta_range), required_active)
     assert root is not None
 
     def bound(box: Box) -> float:
-        coarse = upper_duration(box, dt, points, center_cells)
+        coarse = upper_duration(
+            box,
+            dt,
+            points,
+            center_cells,
+            single_cumulative_cap,
+            consistent_center_cells,
+            required_active,
+            event_cells,
+            joint_cell_consistency,
+        )
         if fine_dt is not None and coarse <= refine_below:
-            return min(coarse, upper_duration(box, fine_dt, points, center_cells))
+            return min(
+                coarse,
+                upper_duration(
+                    box,
+                    fine_dt,
+                    points,
+                    center_cells,
+                    single_cumulative_cap,
+                    consistent_center_cells,
+                    required_active,
+                    event_cells,
+                    joint_cell_consistency,
+                ),
+            )
         return coarse
 
     root_upper = bound(root)
@@ -334,11 +623,15 @@ def branch_bound(
             continue
         index = split_index(box)
         for child in box.split(index):
-            child = contract(child)
+            child = contract(child, required_active)
             if child is None:
                 infeasible += 1
                 continue
-            child_upper = bound(child)
+            # A child box is a subset of its parent, so the parent's safe
+            # upper bound remains valid for it.  Keeping that inherited cap
+            # prevents harmless interval/subbox discretization changes from
+            # making the reported global bound rise after a split.
+            child_upper = min(upper, bound(child))
             if child_upper <= target:
                 pruned += 1
             else:
@@ -361,8 +654,18 @@ def branch_bound(
         "cover_end": COVER_END,
         "distance_guard": DISTANCE_GUARD,
         "time_guard": TIME_GUARD,
+        "route_guard": ROUTE_GUARD,
+        "route_time_epsilon": ROUTE_TIME_EPS,
         "n_phi_per_rim": n_phi,
         "center_cells": center_cells,
+        "single_cumulative_cap": single_cumulative_cap,
+        "consistent_center_cells": consistent_center_cells,
+        "required_active_bombs": [index + 1 for index in required_active],
+        "event_cells": event_cells,
+        "joint_cell_consistency": joint_cell_consistency,
+        "theta_range_deg": None
+        if theta_range is None
+        else [math.degrees(value) for value in theta_range],
         "target": target,
         "root_upper": root_upper,
         "global_upper": global_upper,
@@ -383,6 +686,53 @@ def self_test() -> None:
     incumbent = point_box()
     upper = upper_duration(incumbent, 0.01, points)
     assert upper >= 7.650405706
+    consistent = upper_duration(
+        incumbent,
+        0.01,
+        points,
+        center_cells=4,
+        consistent_center_cells=True,
+    )
+    assert 7.650405706 <= consistent <= upper + 1e-12
+    event_consistent = upper_duration(
+        incumbent,
+        0.01,
+        points,
+        center_cells=4,
+        event_cells=4,
+    )
+    assert 7.650405706 <= event_consistent <= upper + 1e-12
+    paired_consistent = upper_duration(
+        incumbent,
+        0.01,
+        points,
+        center_cells=4,
+        event_cells=4,
+        joint_cell_consistency=True,
+    )
+    assert 7.650405706 <= paired_consistent <= event_consistent + 1e-12
+    # Regression for large-coordinate cancellation when a bomb explodes
+    # almost immediately after release.
+    near_immediate_values = (
+        math.radians(182.05952238601665),
+        140.0,
+        8.77768040631848e-10,
+        2.427451017329057,
+        4.983345971320381,
+        3.737831996772812e-06,
+        4.97088495566696,
+        5.8476180845065615,
+    )
+    near_immediate = Box(near_immediate_values, near_immediate_values)
+    guarded = upper_duration(
+        near_immediate,
+        0.02,
+        points,
+        center_cells=4,
+        event_cells=4,
+        joint_cell_consistency=True,
+    )
+    assert guarded >= 2.55
     parent = contract(root_box())
     assert parent is not None
     parent_upper = upper_duration(parent, 0.05, points)
@@ -402,7 +752,38 @@ def main() -> None:
     parser.add_argument("--target", type=float, default=8.0)
     parser.add_argument("--max-nodes", type=int, default=2_000)
     parser.add_argument("--center-cells", type=int, choices=[1, 2, 4, 8], default=4)
-    parser.add_argument("--preset", choices=["full", "immediate"], default="full")
+    parser.add_argument(
+        "--single-cumulative-cap",
+        type=float,
+        help="optional independently certified cumulative upper for one bomb",
+    )
+    parser.add_argument(
+        "--consistent-center-cells",
+        action="store_true",
+        help="keep one spatial subbox per bomb across all time bins",
+    )
+    parser.add_argument(
+        "--required-active",
+        default="",
+        help="comma-separated 1-based bombs required to explode by COVER_END",
+    )
+    parser.add_argument(
+        "--event-cells",
+        type=int,
+        choices=[1, 2, 4, 8],
+        default=1,
+        help="fixed explosion-time subcells per bomb across all time bins",
+    )
+    parser.add_argument(
+        "--theta-range-deg",
+        help="optional lower,upper heading shard in degrees",
+    )
+    parser.add_argument(
+        "--joint-cell-consistency",
+        action="store_true",
+        help="pair fixed center and explosion-time cells across the time axis",
+    )
+    parser.add_argument("--preset", choices=["full", "immediate", "two"], default="full")
     parser.add_argument(
         "--output",
         type=Path,
@@ -410,6 +791,17 @@ def main() -> None:
     )
     args = parser.parse_args()
     self_test()
+    required_active = tuple(
+        int(item) - 1 for item in args.required_active.split(",") if item
+    )
+    if any(index not in range(3) for index in required_active):
+        parser.error("--required-active accepts only bomb numbers 1,2,3")
+    theta_range = None
+    if args.theta_range_deg:
+        theta_values = [float(item) for item in args.theta_range_deg.split(",")]
+        if len(theta_values) != 2 or not 0 <= theta_values[0] < theta_values[1] <= 360:
+            parser.error("--theta-range-deg must be lower,upper within [0,360]")
+        theta_range = tuple(math.radians(value) for value in theta_values)
     result = branch_bound(
         args.dt,
         args.fine_dt,
@@ -419,6 +811,12 @@ def main() -> None:
         args.max_nodes,
         args.center_cells,
         args.preset,
+        args.single_cumulative_cap,
+        args.consistent_center_cells,
+        required_active,
+        args.event_cells,
+        theta_range,
+        args.joint_cell_consistency,
     )
     args.output.write_text(json.dumps(result, indent=2), encoding="utf-8")
     print(json.dumps(result, indent=2), flush=True)

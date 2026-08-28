@@ -340,14 +340,20 @@ def branch_bound(
             if child is None:
                 infeasible += 1
                 continue
-            child_upper = upper_duration(
-                child,
-                dt,
-                points,
-                center_cells,
-                names,
-                time_range,
-                connected_single_cap,
+            # The child is contained in the parent.  Reuse the parent's safe
+            # cap so adaptive spatial subboxes cannot make the queue bound
+            # increase numerically after a split.
+            child_upper = min(
+                upper,
+                upper_duration(
+                    child,
+                    dt,
+                    points,
+                    center_cells,
+                    names,
+                    time_range,
+                    connected_single_cap,
+                ),
             )
             if child_upper <= target:
                 pruned += 1
