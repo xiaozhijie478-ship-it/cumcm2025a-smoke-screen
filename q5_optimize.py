@@ -1246,6 +1246,59 @@ def attack_empty_slots(
     return record
 
 
+def prune_zero_marginal_bombs(
+    validation_file: Path,
+    output: Path,
+    threshold: float,
+) -> dict[str, object]:
+    """Remove bombs whose fixed-grid leave-one-out loss does not exceed threshold."""
+    validation = json.loads(validation_file.read_text(encoding="utf-8"))
+    useful = {
+        (item["uav"], int(item["number"]))
+        for item in validation["marginal_contributions"]
+        if float(item["total_loss"]) > threshold
+    }
+    removed = [
+        item
+        for item in validation["marginal_contributions"]
+        if (item["uav"], int(item["number"])) not in useful
+    ]
+    active = [
+        strategy_from_record(item)
+        for item in validation["bombs"]
+        if (item["uav"], int(item["number"])) in useful
+    ]
+    renumbered = []
+    for uav in UAVS:
+        group = sorted(
+            (item for item in active if item.uav == uav),
+            key=lambda item: item.release_time,
+        )
+        for number, item in enumerate(group, 1):
+            renumbered.append(
+                BombStrategy(
+                    item.uav,
+                    number,
+                    item.theta,
+                    item.speed,
+                    item.release_time,
+                    item.delay,
+                    item.assigned_missile,
+                    item.gravity,
+                )
+            )
+    validate(renumbered)
+    record = {
+        "source": str(validation_file.resolve()),
+        "marginal_threshold": threshold,
+        "removed": removed,
+        "metrics": metrics(renumbered, 0.01, q4.surface_points(80, 19, 12)),
+        "bombs": [strategy_record(item) for item in renumbered],
+    }
+    output.write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
+    return record
+
+
 def refine_active_blocks(
     plan_file: Path,
     output: Path,
@@ -1258,6 +1311,7 @@ def refine_active_blocks(
     search_points = q4.surface_points(20 if quick else 32, 5 if quick else 9, 4 if quick else 6)
     acceptance_points = q4.surface_points(64, 15, 10)
     history: list[dict[str, object]] = []
+    attempts: list[dict[str, object]] = []
     bounds_by_uav = {
         uav: BOUNDS_ROUTE + [(0.0, 1.0)] * (2 * sum(item.uav == uav for item in active))
         for uav in UAVS
@@ -1390,6 +1444,15 @@ def multistart_active_blocks(
             candidate = fixed + decode_mixed_block(uav, labels, result.x)
             audited = metrics(candidate, 0.02, acceptance_points)
             proposals.append((float(audited["total"]), candidate, audited, seed, result))
+            attempts.append(
+                {
+                    "uav": uav,
+                    "seed": seed,
+                    "candidate_total": audited["total"],
+                    "optimizer_success": bool(result.success),
+                    "optimizer_evaluations": int(result.nfev),
+                }
+            )
             print(
                 f"multistart_uav={uav},seed={seed},candidate={audited['total']:.9f},"
                 f"evaluations={result.nfev}",
@@ -1441,6 +1504,7 @@ def multistart_active_blocks(
         "source": str(plan_file.resolve()),
         "seeds": seeds,
         "threshold": 0.005,
+        "attempts": attempts,
         "history": history,
         "metrics": final,
         "bombs": [strategy_record(item) for item in renumbered],
@@ -1595,6 +1659,11 @@ def main() -> None:
         help="multi-seed attack of remaining UAV bomb slots",
     )
     parser.add_argument(
+        "--prune-zero-marginal",
+        action="store_true",
+        help="remove bombs with negligible fixed-grid leave-one-out loss",
+    )
+    parser.add_argument(
         "--refine-active-blocks",
         action="store_true",
         help="jointly polish each active UAV route and its mixed-missile bombs",
@@ -1658,6 +1727,11 @@ def main() -> None:
         default=Path(__file__).with_name("q5_attacked_plan.json"),
     )
     parser.add_argument(
+        "--pruned-output",
+        type=Path,
+        default=Path(__file__).with_name("q5_pruned_plan.json"),
+    )
+    parser.add_argument(
         "--block-attack-output",
         type=Path,
         default=Path(__file__).with_name("q5_block_attacked_plan.json"),
@@ -1670,12 +1744,28 @@ def main() -> None:
     parser.add_argument("--top", type=int, default=10)
     parser.add_argument("--rank", type=int, default=1)
     parser.add_argument("--cycles", type=int, default=1)
+    parser.add_argument("--prune-threshold", type=float, default=1e-6)
     parser.add_argument("--only-uav", choices=list(UAVS))
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
     self_test()
     print("missile_hit_times", {name: missile_hit_time(name) for name in MISSILES})
     seeds = [int(item) for item in args.seeds.split(",")]
+    if args.prune_zero_marginal:
+        record = prune_zero_marginal_bombs(
+            args.activated_validation_output,
+            args.pruned_output,
+            args.prune_threshold,
+        )
+        print(f"saved={args.pruned_output}")
+        print(
+            json.dumps(
+                {"removed": record["removed"], "metrics": record["metrics"]},
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+        return
     if args.multistart_active_blocks:
         record = multistart_active_blocks(
             args.activation_output,

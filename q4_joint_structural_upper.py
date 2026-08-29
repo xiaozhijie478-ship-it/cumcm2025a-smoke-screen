@@ -34,7 +34,7 @@ VMAX = q4.q2.SPEED_BOUNDS[1]
 MISSILE_HORIZONTAL_SPEED = abs(
     geometry.MISSILE_SPEED * geometry.MISSILE_DIRECTION[0]
 )
-SINGLE_UPPERS = {"FY1": 4.589, "FY3": 3.250}
+SINGLE_UPPERS = {"FY1": 4.589, "FY3": 3.225}
 OUTPUT = Path(__file__).with_name("q4_joint_structural_upper.json")
 
 

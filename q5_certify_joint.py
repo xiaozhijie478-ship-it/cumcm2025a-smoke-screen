@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import heapq
 import itertools
 import json
@@ -99,6 +100,72 @@ def point_time_lipschitz(
         np.linalg.norm(np.cross(missile_velocity, segment_0)) / minimum_segment_length
     )
     return geometry.SMOKE_SINK_SPEED + perpendicular_speed
+
+
+def _time_lipschitz_context(
+    missile_name: str,
+    strategies: list[q5.BombStrategy],
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Precompute the fixed quantities shared by every target-surface cell."""
+    missile_0 = q5.MISSILES[missile_name]
+    missile_velocity = -geometry.MISSILE_SPEED * missile_0 / np.linalg.norm(missile_0)
+    cloud_velocity = np.array([0.0, 0.0, -geometry.SMOKE_SINK_SPEED])
+    q_0 = np.stack(
+        [
+            item.explosion_point
+            - cloud_velocity * item.explosion_time
+            - missile_0
+            for item in strategies
+        ]
+    )
+    return missile_0, missile_velocity, q_0, cloud_velocity - missile_velocity
+
+
+def _point_time_lipschitz_rates(
+    point: np.ndarray,
+    missile_0: np.ndarray,
+    missile_velocity: np.ndarray,
+    q_0: np.ndarray,
+    q_velocity: np.ndarray,
+    left: float,
+    right: float,
+) -> np.ndarray:
+    """Vectorized equivalent of :func:`point_time_lipschitz`."""
+    segment_0 = point - missile_0
+    coefficient_2 = -float(np.dot(q_velocity, missile_velocity))
+    coefficient_1 = float(np.dot(q_velocity, segment_0)) - q_0 @ missile_velocity
+    coefficient_0 = q_0 @ segment_0
+    numerator_min = np.minimum(
+        coefficient_2 * left**2 + coefficient_1 * left + coefficient_0,
+        coefficient_2 * right**2 + coefficient_1 * right + coefficient_0,
+    )
+    if abs(coefficient_2) > 1e-15:
+        vertex = -coefficient_1 / (2 * coefficient_2)
+        vertex_value = coefficient_2 * vertex**2 + coefficient_1 * vertex + coefficient_0
+        numerator_min = np.where(
+            (left < vertex) & (vertex < right),
+            np.minimum(numerator_min, vertex_value),
+            numerator_min,
+        )
+    closest_time = float(
+        np.clip(
+            np.dot(segment_0, missile_velocity)
+            / np.dot(missile_velocity, missile_velocity),
+            left,
+            right,
+        )
+    )
+    minimum_segment_length = float(
+        np.linalg.norm(segment_0 - missile_velocity * closest_time)
+    )
+    perpendicular_speed = float(
+        np.linalg.norm(np.cross(missile_velocity, segment_0)) / minimum_segment_length
+    )
+    return np.where(
+        numerator_min <= 0.0,
+        TIME_LIPSCHITZ,
+        geometry.SMOKE_SINK_SPEED + perpendicular_speed,
+    )
 
 
 def cell_point_radius(cell: tuple[str, float, float, float, float]) -> tuple[np.ndarray, float]:
@@ -262,6 +329,7 @@ def interval_surface_status(
         return "uncovered", 0, math.inf
     missile = missile_position(missile_name, midpoint)
     clouds = np.stack([item.cloud_center(midpoint) for item in active])
+    rate_context = _time_lipschitz_context(missile_name, active)
     heap: list[tuple[float, int, tuple[str, float, float, float, float]]] = []
     counter = itertools.count()
     cells = 0
@@ -271,12 +339,7 @@ def interval_surface_status(
         nonlocal cells, worst_upper
         point, radius = cell_point_radius(cell)
         distances = point_distances(point, missile, clouds)
-        rates = np.array(
-            [
-                point_time_lipschitz(point, missile_name, item, left, right)
-                for item in active
-            ]
-        )
+        rates = _point_time_lipschitz_rates(point, *rate_context, left, right)
         witness_lower = float(np.min(distances - rates * half_width))
         if witness_lower > geometry.SMOKE_RADIUS + NUMERICAL_GUARD:
             return True
@@ -344,6 +407,29 @@ def single_intervals(
         strategy.explosion_time + geometry.SMOKE_LIFETIME,
         q5.missile_hit_time(missile_name),
     )
+    if end <= start:
+        return []
+    times = np.linspace(start, end, max(2, int(math.ceil((end - start) / step)) + 1))
+    values = np.array([single_observer(strategy, missile_name, float(t)) for t in times])
+    roots = []
+    for index in range(len(times) - 1):
+        if values[index] == 0:
+            roots.append(float(times[index]))
+        elif values[index] * values[index + 1] < 0:
+            roots.append(
+                single_boundary(
+                    strategy, missile_name, float(times[index]), float(times[index + 1])
+                )
+            )
+    cuts = [start, *roots, end]
+    return merge(
+        [
+            (left, right)
+            for left, right in zip(cuts, cuts[1:])
+            if right > left
+            and single_observer(strategy, missile_name, (left + right) / 2) <= 0
+        ]
+    )
 
 
 def local_single_intervals(
@@ -353,7 +439,7 @@ def local_single_intervals(
     step: float = 0.02,
     padding: float = 0.05,
 ) -> list[tuple[float, float]]:
-    """Refine known dense-grid intervals; omitted intervals only weaken the lower bound."""
+    """Generate refined candidates only; this sampled routine is not a proof."""
     active_start = strategy.explosion_time
     active_end = min(
         strategy.explosion_time + geometry.SMOKE_LIFETIME,
@@ -390,29 +476,6 @@ def local_single_intervals(
             and single_observer(strategy, missile_name, (left + right) / 2) <= 0
         )
     return merge(refined)
-    if end <= start:
-        return []
-    times = np.linspace(start, end, max(2, int(math.ceil((end - start) / step)) + 1))
-    values = np.array([single_observer(strategy, missile_name, float(t)) for t in times])
-    roots = []
-    for index in range(len(times) - 1):
-        if values[index] == 0:
-            roots.append(float(times[index]))
-        elif values[index] * values[index + 1] < 0:
-            roots.append(
-                single_boundary(
-                    strategy, missile_name, float(times[index]), float(times[index + 1])
-                )
-            )
-    cuts = [start, *roots, end]
-    return merge(
-        [
-            (left, right)
-            for left, right in zip(cuts, cuts[1:])
-            if right > left
-            and single_observer(strategy, missile_name, (left + right) / 2) <= 0
-        ]
-    )
 
 
 def interval_difference(
@@ -466,16 +529,8 @@ def certify_candidate_intervals(
     nodes = peak_cells = 0
     while stack:
         left, right = stack.pop()
-        # Broad boundary blocks are cheap to split in time and expensive to
-        # over-refine in space.  Reserve the full surface-cell budget for the
-        # final narrow blocks where it can actually settle the classification.
-        local_max_cells = (
-            max_cells
-            if right - left <= 2.0 * time_tolerance
-            else min(max_cells, 3_000)
-        )
         status, cells, _ = interval_surface_status(
-            missile_name, left, right, strategies, local_max_cells
+            missile_name, left, right, strategies, max_cells
         )
         nodes += 1
         peak_cells = max(peak_cells, cells)
@@ -506,12 +561,84 @@ def certify_candidate_intervals(
     }
 
 
+def padded_single_candidates(
+    strategy: q5.BombStrategy,
+    missile_name: str,
+    hints: list[list[float]],
+    padding: float,
+) -> list[tuple[float, float]]:
+    """Expand dense hints only to choose work; proof never relies on the hints."""
+    active_start = strategy.explosion_time
+    active_end = min(
+        strategy.explosion_time + geometry.SMOKE_LIFETIME,
+        q5.missile_hit_time(missile_name),
+    )
+    return merge(
+        [
+            (max(active_start, float(left) - padding), min(active_end, float(right) + padding))
+            for left, right in hints
+            if min(active_end, float(right) + padding)
+            > max(active_start, float(left) - padding)
+        ]
+    )
+
+
+def certify_assigned_single_baseline(
+    missile_name: str,
+    strategies: list[q5.BombStrategy],
+    approximate: dict[tuple[str, int], list[list[float]]],
+    time_tolerance: float,
+    max_cells: int,
+    initial_chunk: float,
+    padding: float,
+) -> dict[str, object]:
+    """Prove assigned one-ball intervals over continuous time and target surface."""
+    by_bomb: dict[str, object] = {}
+    covered: list[tuple[float, float]] = []
+    for item in strategies:
+        if item.assigned_missile != missile_name:
+            continue
+        key = f"{item.uav}-{item.number}"
+        hints = approximate[(item.uav, item.number)]
+        candidates = padded_single_candidates(item, missile_name, hints, padding)
+        certificate = certify_candidate_intervals(
+            missile_name,
+            candidates,
+            [item],
+            time_tolerance,
+            max_cells,
+            initial_chunk=initial_chunk,
+        )
+        covered.extend(certificate["covered"])
+        by_bomb[key] = {
+            "dense_hint_intervals": hints,
+            "padded_candidate_intervals": candidates,
+            "certificate": certificate,
+        }
+        print(
+            f"single_certified={missile_name},{key},"
+            f"covered={certificate['duration_lower']:.9f},"
+            f"unresolved={certificate['duration_unresolved']:.9f}",
+            flush=True,
+        )
+    covered_union = merge(covered)
+    return {
+        "by_bomb": by_bomb,
+        "covered_union": covered_union,
+        "duration_lower": sum(right - left for left, right in covered_union),
+    }
+
+
 def hybrid_certificate(
     validation_file: Path,
     bomb_table_file: Path,
     strategies: list[q5.BombStrategy],
     time_tolerance: float,
     max_cells: int,
+    single_max_cells: int,
+    single_initial_chunk: float,
+    single_padding: float,
+    missile_names: list[str] | None = None,
 ) -> dict[str, object]:
     validation = json.loads(validation_file.read_text(encoding="utf-8"))
     bomb_table = json.loads(bomb_table_file.read_text(encoding="utf-8"))["bombs"]
@@ -521,42 +648,45 @@ def hybrid_certificate(
     }
     dense = validation["resolutions"]["dense"]["metrics"]["intervals"]
     by_missile = {}
-    for missile_name in q5.MISSILES:
-        individual = {}
-        for item in strategies:
-            intervals = (
-                local_single_intervals(
-                    item,
-                    missile_name,
-                    approximate[(item.uav, item.number)],
-                )
+    for missile_name in missile_names or list(q5.MISSILES):
+        single_certificate = certify_assigned_single_baseline(
+            missile_name,
+            strategies,
+            approximate,
+            time_tolerance,
+            single_max_cells,
+            single_initial_chunk,
+            single_padding,
+        )
+        single_union = single_certificate["covered_union"]
+        sampled_single_union_hint = merge(
+            [
+                tuple(pair)
+                for item in strategies
                 if item.assigned_missile == missile_name
-                else []
-            )
-            individual[f"{item.uav}-{item.number}"] = intervals
-            if intervals:
-                print(
-                    f"single_exact={missile_name},{item.uav}-{item.number},"
-                    f"duration={sum(b-a for a,b in intervals):.9f}",
-                    flush=True,
-                )
-        single_union = merge([pair for intervals in individual.values() for pair in intervals])
+                for pair in approximate[(item.uav, item.number)]
+            ]
+        )
         joint_only = interval_difference(
-            [tuple(pair) for pair in dense[missile_name]], single_union
+            [tuple(pair) for pair in dense[missile_name]], sampled_single_union_hint
         )
         joint_certificate = certify_candidate_intervals(
             missile_name, joint_only, strategies, time_tolerance, max_cells
         )
-        single_duration = sum(end - start for start, end in single_union)
+        certified_intervals = merge(single_union + joint_certificate["covered"])
+        certified_duration = sum(end - start for start, end in certified_intervals)
+        single_duration = float(single_certificate["duration_lower"])
         by_missile[missile_name] = {
-            "individual_intervals": individual,
-            "single_baseline_scope": "assigned bombs only; omitted cross-label effects can only raise the lower bound",
-            "single_union": single_union,
+            "single_baseline_scope": "assigned bombs only, each interval proved over continuous time and the full target surface; omitted cross-label effects can only raise the lower bound",
+            "single_certificate": single_certificate,
+            "certified_single_union": single_union,
             "single_duration": single_duration,
+            "sampled_single_union_hint_not_certified": sampled_single_union_hint,
+            "joint_candidate_scope": "dense joint intervals minus sampled assigned-single hints; hints only restrict the search and never contribute to the lower bound",
             "dense_joint_only_candidates": joint_only,
             "joint_only_certificate": joint_certificate,
-            "certified_duration_lower": single_duration
-            + float(joint_certificate["duration_lower"]),
+            "certified_intervals": certified_intervals,
+            "certified_duration_lower": certified_duration,
             "dense_duration": sum(end - start for start, end in dense[missile_name]),
         }
         print(
@@ -580,7 +710,7 @@ def targeted_certificate(
     strategies: list[q5.BombStrategy],
     max_cells: int,
 ) -> dict[str, object]:
-    """Certify representative, disjoint pieces of every material joint-only interval."""
+    """Legacy diagnostic: only the representative joint pieces are certified."""
     validation = json.loads(validation_file.read_text(encoding="utf-8"))
     dense = validation["resolutions"]["dense"]["metrics"]["intervals"]
     bomb_table = json.loads(bomb_table_file.read_text(encoding="utf-8"))["bombs"]
@@ -642,19 +772,21 @@ def targeted_certificate(
         single_duration = sum(end - start for start, end in single_union)
         joint_duration = sum(end - start for start, end in certified)
         results[missile_name] = {
-            "single_union": single_union,
-            "single_duration": single_duration,
+            "sampled_single_union_not_certified": single_union,
+            "sampled_single_duration_not_certified": single_duration,
             "material_joint_only_intervals": joint_only,
             "attempts": attempts,
             "certified_joint_pieces": certified,
             "certified_joint_duration": joint_duration,
-            "certified_duration_lower": single_duration + joint_duration,
+            "diagnostic_combined_duration_not_certified": single_duration + joint_duration,
             "dense_duration": sum(end - start for start, end in dense_intervals),
         }
     return {
+        "status": "legacy diagnostic; sampled single-ball baseline prevents a certified total lower bound",
         "by_missile": results,
-        "total_certified_lower": sum(
-            float(item["certified_duration_lower"]) for item in results.values()
+        "total_diagnostic_not_certified": sum(
+            float(item["diagnostic_combined_duration_not_certified"])
+            for item in results.values()
         ),
         "total_dense": sum(float(item["dense_duration"]) for item in results.values()),
     }
@@ -808,6 +940,34 @@ def certify_missile(
 
 
 def self_test(strategies: list[q5.BombStrategy]) -> None:
+    # The vectorized production rates must match the original scalar formula.
+    rng = np.random.default_rng(20250829)
+    for missile_name, left, right in (
+        ("M1", 8.00, 8.02),
+        ("M2", 18.50, 18.55),
+        ("M3", 28.00, 28.10),
+    ):
+        sample = strategies[: min(6, len(strategies))]
+        context = _time_lipschitz_context(missile_name, sample)
+        for _ in range(8):
+            phi = float(rng.uniform(0.0, 2 * math.pi))
+            point = np.array(
+                [
+                    geometry.TARGET_RADIUS * math.cos(phi),
+                    geometry.TARGET_CENTER_XY[1]
+                    + geometry.TARGET_RADIUS * math.sin(phi),
+                    float(rng.uniform(0.0, geometry.TARGET_HEIGHT)),
+                ]
+            )
+            scalar = np.array(
+                [
+                    point_time_lipschitz(point, missile_name, item, left, right)
+                    for item in sample
+                ]
+            )
+            vector = _point_time_lipschitz_rates(point, *context, left, right)
+            np.testing.assert_allclose(vector, scalar, rtol=0.0, atol=1e-12)
+
     # The cell bounds must enclose an independent dense-grid lower bound.
     for missile_name, t in (("M1", 15.0), ("M2", 17.0), ("M3", 18.0)):
         lower, upper, _ = surface_bounds(missile_name, t, strategies, 0.05, 20_000)
@@ -851,12 +1011,15 @@ def main() -> None:
     parser.add_argument(
         "--plan",
         type=Path,
-        default=Path(__file__).with_name("q5_block_attacked_plan_v2.json"),
+        default=Path(__file__).with_name("q5_final_plan.json"),
     )
     parser.add_argument("--missile", choices=["all", *q5.MISSILES], default="all")
     parser.add_argument("--space-tol", type=float, default=0.03)
     parser.add_argument("--time-tol", type=float, default=0.002)
     parser.add_argument("--max-cells", type=int, default=50_000)
+    parser.add_argument("--single-max-cells", type=int, default=8_000)
+    parser.add_argument("--single-initial-chunk", type=float, default=0.02)
+    parser.add_argument("--single-padding", type=float, default=0.05)
     parser.add_argument(
         "--output",
         type=Path,
@@ -869,12 +1032,12 @@ def main() -> None:
     parser.add_argument(
         "--validation",
         type=Path,
-        default=Path(__file__).with_name("q5_block_attacked_validation_v2.json"),
+        default=Path(__file__).with_name("q5_final_validation.json"),
     )
     parser.add_argument(
         "--bomb-table",
         type=Path,
-        default=Path(__file__).with_name("q5_bomb_table.json"),
+        default=Path(__file__).with_name("q5_final_bomb_table.json"),
     )
     args = parser.parse_args()
     plan = json.loads(args.plan.read_text(encoding="utf-8"))
@@ -899,12 +1062,27 @@ def main() -> None:
             "validation": str(args.validation.resolve()),
             "bomb_table": str(args.bomb_table.resolve()),
             "time_tolerance": args.time_tol,
+            "joint_max_cells": args.max_cells,
+            "single_max_cells": args.single_max_cells,
+            "single_initial_chunk": args.single_initial_chunk,
+            "single_padding": args.single_padding,
+            "numerical_guard": NUMERICAL_GUARD,
+            "input_sha256": {
+                "plan": hashlib.sha256(args.plan.read_bytes()).hexdigest(),
+                "validation": hashlib.sha256(args.validation.read_bytes()).hexdigest(),
+                "bomb_table": hashlib.sha256(args.bomb_table.read_bytes()).hexdigest(),
+            },
+            "missiles": list(q5.MISSILES) if args.missile == "all" else [args.missile],
             "hybrid": hybrid_certificate(
                 args.validation,
                 args.bomb_table,
                 strategies,
                 args.time_tol,
                 args.max_cells,
+                args.single_max_cells,
+                args.single_initial_chunk,
+                args.single_padding,
+                list(q5.MISSILES) if args.missile == "all" else [args.missile],
             ),
         }
         args.output.write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -928,6 +1106,12 @@ def main() -> None:
             "plan": str(args.plan.resolve()),
             "validation": str(args.validation.resolve()),
             "time_tolerance": args.time_tol,
+            "max_cells": args.max_cells,
+            "numerical_guard": NUMERICAL_GUARD,
+            "input_sha256": {
+                "plan": hashlib.sha256(args.plan.read_bytes()).hexdigest(),
+                "validation": hashlib.sha256(args.validation.read_bytes()).hexdigest(),
+            },
             "certificates": certificates,
             "total_upper": sum(float(item["duration_upper"]) for item in certificates),
         }

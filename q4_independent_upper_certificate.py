@@ -9,7 +9,7 @@ import q2_global_search as q2_global
 import q4_optimize as q4
 
 
-THRESHOLDS = {"FY1": 4.589, "FY2": 4.000, "FY3": 3.250}
+THRESHOLDS = {"FY1": 4.589, "FY2": 4.000, "FY3": 3.225}
 OUTPUT = Path(__file__).with_name("q4_independent_upper_certificate.json")
 
 

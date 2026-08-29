@@ -3,9 +3,10 @@
   "validation": "C:\\Users\\Allen\\Desktop\\数模\\cumcm2025a\\q5_block_attacked_validation_v2.json",
   "bomb_table": "C:\\Users\\Allen\\Desktop\\数模\\cumcm2025a\\q5_bomb_table.json",
   "targeted": {
+    "status": "legacy diagnostic; sampled single-ball baseline prevents a certified total lower bound",
     "by_missile": {
       "M1": {
-        "single_union": [
+        "sampled_single_union_not_certified": [
           [
             4.847156694709627,
             7.403159406341729
@@ -27,7 +28,7 @@
             30.02149790573101
           ]
         ],
-        "single_duration": 17.00745246089373,
+        "sampled_single_duration_not_certified": 17.00745246089373,
         "material_joint_only_intervals": [
           [
             25.766074968546107,
@@ -378,11 +379,11 @@
           ]
         ],
         "certified_joint_duration": 0.4400000000000688,
-        "certified_duration_lower": 17.4474524608938,
+        "diagnostic_combined_duration_not_certified": 17.4474524608938,
         "dense_duration": 18.367816099336054
       },
       "M2": {
-        "single_union": [
+        "sampled_single_union_not_certified": [
           [
             15.65013622342153,
             19.30038145928681
@@ -392,7 +393,7 @@
             23.170122476750592
           ]
         ],
-        "single_duration": 7.132759937093429,
+        "sampled_single_duration_not_certified": 7.132759937093429,
         "material_joint_only_intervals": [
           [
             19.320680997058588,
@@ -483,11 +484,11 @@
           ]
         ],
         "certified_joint_duration": 0.0800000000000125,
-        "certified_duration_lower": 7.212759937093441,
+        "diagnostic_combined_duration_not_certified": 7.212759937093441,
         "dense_duration": 7.499774830203764
       },
       "M3": {
-        "single_union": [
+        "sampled_single_union_not_certified": [
           [
             13.143128699872932,
             16.304680205794703
@@ -501,7 +502,7 @@
             23.80004836107318
           ]
         ],
-        "single_duration": 9.119600359413276,
+        "sampled_single_duration_not_certified": 9.119600359413276,
         "material_joint_only_intervals": [
           [
             16.304680205794703,
@@ -539,11 +540,11 @@
           ]
         ],
         "certified_joint_duration": 0.010000000000005116,
-        "certified_duration_lower": 9.129600359413281,
+        "diagnostic_combined_duration_not_certified": 9.129600359413281,
         "dense_duration": 9.241581060449315
       }
     },
-    "total_certified_lower": 33.789812757400526,
+    "total_diagnostic_not_certified": 33.789812757400526,
     "total_dense": 35.10917198998913
   }
 }

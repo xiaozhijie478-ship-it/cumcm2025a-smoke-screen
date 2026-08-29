@@ -1,0 +1,211 @@
+{
+  "plan": "C:\\Users\\Allen\\Desktop\\数模\\cumcm2025a\\q5_final_plan.json",
+  "validation": "C:\\Users\\Allen\\Desktop\\数模\\cumcm2025a\\q5_final_validation.json",
+  "bomb_table": "C:\\Users\\Allen\\Desktop\\数模\\cumcm2025a\\q5_final_bomb_table.json",
+  "time_tolerance": 0.0005,
+  "joint_max_cells": 8000,
+  "single_max_cells": 8000,
+  "single_initial_chunk": 0.02,
+  "single_padding": 0.05,
+  "numerical_guard": 1e-08,
+  "input_sha256": {
+    "plan": "2dacd31af395e259d3d587548f676aa193cd269e3813fb00ed5a44bd9cd67579",
+    "validation": "ff2e8af38a8eba6a653cc0d7dde23712662825b031aadcb73d23b677a674fb4e",
+    "bomb_table": "44917b0f9381c7a2d9bc458f3c015406d4328d29feb7ed164103946cf083a795"
+  },
+  "missiles": [
+    "M2"
+  ],
+  "hybrid": {
+    "by_missile": {
+      "M2": {
+        "single_baseline_scope": "assigned bombs only, each interval proved over continuous time and the full target surface; omitted cross-label effects can only raise the lower bound",
+        "single_certificate": {
+          "by_bomb": {
+            "FY4-1": {
+              "dense_hint_intervals": [
+                [
+                  15.650067297844208,
+                  19.300385493575426
+                ]
+              ],
+              "padded_candidate_intervals": [
+                [
+                  15.600067297844207,
+                  19.350385493575427
+                ]
+              ],
+              "certificate": {
+                "covered": [
+                  [
+                    15.651185331762086,
+                    19.29802067834248
+                  ]
+                ],
+                "unresolved": [
+                  [
+                    15.649938550447015,
+                    15.651185331762086
+                  ],
+                  [
+                    19.29802067834248,
+                    19.300825936301386
+                  ]
+                ],
+                "rejected": [
+                  [
+                    15.600067297844207,
+                    15.649938550447015
+                  ],
+                  [
+                    19.300825936301386,
+                    19.350385493575427
+                  ]
+                ],
+                "duration_lower": 3.646835346580392,
+                "duration_unresolved": 0.0040520392739793465,
+                "nodes": 248,
+                "peak_surface_cells": 8000
+              }
+            },
+            "FY5-3": {
+              "dense_hint_intervals": [
+                [
+                  19.687562621279547,
+                  23.17013757521646
+                ]
+              ],
+              "padded_candidate_intervals": [
+                [
+                  19.637562621279546,
+                  23.220137575216462
+                ]
+              ],
+              "certificate": {
+                "covered": [
+                  [
+                    19.69602825420838,
+                    23.134616037687586
+                  ]
+                ],
+                "unresolved": [
+                  [
+                    19.687320606750895,
+                    19.69602825420838
+                  ],
+                  [
+                    23.134616037687586,
+                    23.170690577154314
+                  ]
+                ],
+                "rejected": [
+                  [
+                    19.637562621279546,
+                    19.687320606750895
+                  ],
+                  [
+                    23.170690577154314,
+                    23.220137575216462
+                  ]
+                ],
+                "duration_lower": 3.438587783479207,
+                "duration_unresolved": 0.04478218692421265,
+                "nodes": 498,
+                "peak_surface_cells": 8000
+              }
+            }
+          },
+          "covered_union": [
+            [
+              15.651185331762086,
+              19.29802067834248
+            ],
+            [
+              19.69602825420838,
+              23.134616037687586
+            ]
+          ],
+          "duration_lower": 7.085423130059599
+        },
+        "certified_single_union": [
+          [
+            15.651185331762086,
+            19.29802067834248
+          ],
+          [
+            19.69602825420838,
+            23.134616037687586
+          ]
+        ],
+        "single_duration": 7.085423130059599,
+        "sampled_single_union_hint_not_certified": [
+          [
+            15.650067297844208,
+            19.300385493575426
+          ],
+          [
+            19.687562621279547,
+            23.17013757521646
+          ]
+        ],
+        "joint_candidate_scope": "dense joint intervals minus sampled assigned-single hints; hints only restrict the search and never contribute to the lower bound",
+        "dense_joint_only_candidates": [
+          [
+            19.320680997058588,
+            19.687562621279547
+          ],
+          [
+            23.17013757521646,
+            23.170137646131757
+          ]
+        ],
+        "joint_only_certificate": {
+          "covered": [
+            [
+              19.429195170479304,
+              19.687562621279547
+            ]
+          ],
+          "unresolved": [
+            [
+              19.320767583213016,
+              19.429195170479304
+            ],
+            [
+              23.17013757521646,
+              23.170137646131757
+            ]
+          ],
+          "rejected": [
+            [
+              19.320680997058588,
+              19.320767583213016
+            ]
+          ],
+          "duration_lower": 0.25836745080024315,
+          "duration_unresolved": 0.10842765818158284,
+          "nodes": 778,
+          "peak_surface_cells": 8000
+        },
+        "certified_intervals": [
+          [
+            15.651185331762086,
+            19.29802067834248
+          ],
+          [
+            19.429195170479304,
+            19.687562621279547
+          ],
+          [
+            19.69602825420838,
+            23.134616037687586
+          ]
+        ],
+        "certified_duration_lower": 7.343790580859842,
+        "dense_duration": 7.499774830203764
+      }
+    },
+    "total_certified_lower": 7.343790580859842,
+    "total_dense": 7.499774830203764
+  }
+}

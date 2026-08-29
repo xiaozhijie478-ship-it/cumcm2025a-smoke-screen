@@ -29,7 +29,7 @@ TIME_RATE = geometry.MISSILE_SPEED + geometry.SMOKE_SINK_SPEED
 DISTANCE_GUARD = 1e-8
 TIME_GUARD = 1e-12
 NAMES = tuple(q4.UAVS)
-SINGLE_DURATION_UPPERS = {"FY1": 4.589, "FY2": 4.000, "FY3": 3.250}
+SINGLE_DURATION_UPPERS = {"FY1": 4.589, "FY2": 4.000, "FY3": 3.225}
 TARGET_LOWER = np.array(
     [
         -geometry.TARGET_RADIUS,
@@ -235,14 +235,18 @@ def upper_duration(
         if not np.any(possible):
             return 0.0
 
-    if center_cells > 1 and len(points) <= 63 and np.any(possible):
+    if center_cells > 1 and len(points) <= 64 and np.any(possible):
         masks = [
             q3ub.coverage_masks(
                 center, half_width, active, missiles, points, threshold, center_cells
             )
             for center, half_width, active in clouds
         ]
-        full = (np.uint64(1) << np.uint64(len(points))) - np.uint64(1)
+        full = (
+            np.iinfo(np.uint64).max
+            if len(points) == 64
+            else (np.uint64(1) << np.uint64(len(points))) - np.uint64(1)
+        )
         for time_index in np.flatnonzero(possible):
             possible[time_index] = any(
                 np.bitwise_or.reduce(np.asarray(choice, dtype=np.uint64)) == full
@@ -373,7 +377,9 @@ def branch_bound(
     return {
         "dt": dt,
         "n_phi_per_rim": n_phi,
+        "witness_points": len(points),
         "center_cells": center_cells,
+        "center_cells_applied": center_cells > 1 and len(points) <= 64,
         "names": names,
         "time_range": time_range,
         "connected_single_cap": connected_single_cap,

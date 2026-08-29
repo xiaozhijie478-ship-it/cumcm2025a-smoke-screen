@@ -1,9 +1,9 @@
 {
   "scope": "three independent single-ball full-occlusion windows",
   "current_total": 11.735130825049858,
-  "strict_upper_total": 11.839,
-  "absolute_gap": 0.1038691749501428,
-  "relative_gap_to_upper": 0.008773475373776738,
+  "strict_upper_total": 11.814,
+  "absolute_gap": 0.07886917495014245,
+  "relative_gap_to_upper": 0.006675907817008842,
   "certificates": {
     "FY1": {
       "current_intervals": [
@@ -49,12 +49,12 @@
         ]
       ],
       "current_duration": 3.1663902950547183,
-      "strict_upper": 3.25,
-      "gap": 0.08360970494528175,
+      "strict_upper": 3.225,
+      "gap": 0.05860970494528184,
       "conic_certificate": {
-        "duration": 3.25,
-        "solves": 197,
-        "pruned": 99,
+        "duration": 3.225,
+        "solves": 861,
+        "pruned": 431,
         "remaining": 0,
         "unresolved": 0
       }

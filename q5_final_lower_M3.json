@@ -1,0 +1,277 @@
+{
+  "plan": "C:\\Users\\Allen\\Desktop\\数模\\cumcm2025a\\q5_final_plan.json",
+  "validation": "C:\\Users\\Allen\\Desktop\\数模\\cumcm2025a\\q5_final_validation.json",
+  "bomb_table": "C:\\Users\\Allen\\Desktop\\数模\\cumcm2025a\\q5_final_bomb_table.json",
+  "time_tolerance": 0.0005,
+  "joint_max_cells": 8000,
+  "single_max_cells": 8000,
+  "single_initial_chunk": 0.02,
+  "single_padding": 0.05,
+  "numerical_guard": 1e-08,
+  "input_sha256": {
+    "plan": "2dacd31af395e259d3d587548f676aa193cd269e3813fb00ed5a44bd9cd67579",
+    "validation": "ff2e8af38a8eba6a653cc0d7dde23712662825b031aadcb73d23b677a674fb4e",
+    "bomb_table": "44917b0f9381c7a2d9bc458f3c015406d4328d29feb7ed164103946cf083a795"
+  },
+  "missiles": [
+    "M3"
+  ],
+  "hybrid": {
+    "by_missile": {
+      "M3": {
+        "single_baseline_scope": "assigned bombs only, each interval proved over continuous time and the full target surface; omitted cross-label effects can only raise the lower bound",
+        "single_certificate": {
+          "by_bomb": {
+            "FY4-3": {
+              "dense_hint_intervals": [
+                [
+                  21.08727536315113,
+                  23.79929209307676
+                ]
+              ],
+              "padded_candidate_intervals": [
+                [
+                  21.08727536315113,
+                  23.849292093076762
+                ]
+              ],
+              "certificate": {
+                "covered": [
+                  [
+                    21.08727536315113,
+                    23.744039881808234
+                  ]
+                ],
+                "unresolved": [
+                  [
+                    23.744039881808234,
+                    23.8011679256826
+                  ]
+                ],
+                "rejected": [
+                  [
+                    23.8011679256826,
+                    23.849292093076762
+                  ]
+                ],
+                "duration_lower": 2.6567645186571056,
+                "duration_unresolved": 0.05712804387436421,
+                "nodes": 529,
+                "peak_surface_cells": 8000
+              }
+            },
+            "FY5-1": {
+              "dense_hint_intervals": [
+                [
+                  13.143085095970495,
+                  16.304683421920263
+                ]
+              ],
+              "padded_candidate_intervals": [
+                [
+                  13.13824435592664,
+                  16.354683421920264
+                ]
+              ],
+              "certificate": {
+                "covered": [
+                  [
+                    13.152291304487365,
+                    16.27508404674282
+                  ]
+                ],
+                "unresolved": [
+                  [
+                    13.142614517701087,
+                    13.152291304487365
+                  ],
+                  [
+                    16.27508404674282,
+                    16.305050870339038
+                  ]
+                ],
+                "rejected": [
+                  [
+                    13.13824435592664,
+                    13.142614517701087
+                  ],
+                  [
+                    16.305050870339038,
+                    16.354683421920264
+                  ]
+                ],
+                "duration_lower": 3.122792742255454,
+                "duration_unresolved": 0.03964361038249642,
+                "nodes": 445,
+                "peak_surface_cells": 8000
+              }
+            },
+            "FY5-2": {
+              "dense_hint_intervals": [
+                [
+                  16.426837417158584,
+                  19.671890155482153
+                ]
+              ],
+              "padded_candidate_intervals": [
+                [
+                  16.376837417158583,
+                  19.721890155482154
+                ]
+              ],
+              "certificate": {
+                "covered": [
+                  [
+                    16.441237149006888,
+                    19.667445937735998
+                  ]
+                ],
+                "unresolved": [
+                  [
+                    16.426303877853663,
+                    16.441237149006888
+                  ],
+                  [
+                    19.667445937735998,
+                    19.672423694787078
+                  ]
+                ],
+                "rejected": [
+                  [
+                    16.376837417158583,
+                    16.426303877853663
+                  ],
+                  [
+                    19.672423694787078,
+                    19.721890155482154
+                  ]
+                ],
+                "duration_lower": 3.22620878872911,
+                "duration_unresolved": 0.019911028204305126,
+                "nodes": 342,
+                "peak_surface_cells": 8000
+              }
+            }
+          },
+          "covered_union": [
+            [
+              13.152291304487365,
+              16.27508404674282
+            ],
+            [
+              16.441237149006888,
+              19.667445937735998
+            ],
+            [
+              21.08727536315113,
+              23.744039881808234
+            ]
+          ],
+          "duration_lower": 9.00576604964167
+        },
+        "certified_single_union": [
+          [
+            13.152291304487365,
+            16.27508404674282
+          ],
+          [
+            16.441237149006888,
+            19.667445937735998
+          ],
+          [
+            21.08727536315113,
+            23.744039881808234
+          ]
+        ],
+        "single_duration": 9.00576604964167,
+        "sampled_single_union_hint_not_certified": [
+          [
+            13.143085095970495,
+            16.304683421920263
+          ],
+          [
+            16.426837417158584,
+            19.671890155482153
+          ],
+          [
+            21.08727536315113,
+            23.79929209307676
+          ]
+        ],
+        "joint_candidate_scope": "dense joint intervals minus sampled assigned-single hints; hints only restrict the search and never contribute to the lower bound",
+        "dense_joint_only_candidates": [
+          [
+            16.304683421920263,
+            16.426837417158584
+          ],
+          [
+            19.671890155482153,
+            19.671905882093093
+          ],
+          [
+            21.087270342587,
+            21.08727536315113
+          ],
+          [
+            23.79929209307676,
+            23.80003107689928
+          ]
+        ],
+        "joint_only_certificate": {
+          "covered": [
+            [
+              16.36667657450371,
+              16.426837417158584
+            ]
+          ],
+          "unresolved": [
+            [
+              16.304683421920263,
+              16.36667657450371
+            ],
+            [
+              19.671890155482153,
+              19.671905882093093
+            ],
+            [
+              23.79929209307676,
+              23.80003107689928
+            ]
+          ],
+          "rejected": [
+            [
+              21.087270342587,
+              21.08727536315113
+            ]
+          ],
+          "duration_lower": 0.06016084265487365,
+          "duration_unresolved": 0.06274786301690582,
+          "nodes": 432,
+          "peak_surface_cells": 8000
+        },
+        "certified_intervals": [
+          [
+            13.152291304487365,
+            16.27508404674282
+          ],
+          [
+            16.36667657450371,
+            16.426837417158584
+          ],
+          [
+            16.441237149006888,
+            19.667445937735998
+          ],
+          [
+            21.08727536315113,
+            23.744039881808234
+          ]
+        ],
+        "certified_duration_lower": 9.065926892296543,
+        "dense_duration": 9.241581227614086
+      }
+    },
+    "total_certified_lower": 9.065926892296543,
+    "total_dense": 9.241581227614086
+  }
+}
