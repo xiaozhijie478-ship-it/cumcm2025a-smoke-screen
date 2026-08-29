@@ -33,6 +33,21 @@ def main() -> None:
         for left, right in zip(headings, headings[1:])
     )
 
+    localizations = []
+    for name in layer["localization_evidence"]:
+        evidence = json.loads(
+            args.manifest.with_name(name).read_text(encoding="utf-8")
+        )
+        assert evidence["target_certified"]
+        angle_lo, angle_hi = evidence["theta_range_deg"]
+        for shard in shards:
+            shard_lo, shard_hi = shard["theta_range_deg"]
+            if angle_lo - 1e-12 <= shard_lo and shard_hi <= angle_hi + 1e-12:
+                shard["global_upper"] = min(shard["global_upper"], evidence["target"])
+        localizations.append(
+            {"heading_deg": evidence["theta_range_deg"], "upper": evidence["target"]}
+        )
+
     replacements = []
     for refinement in layer["refined_heading_shards"]:
         evidence = [
@@ -70,6 +85,7 @@ def main() -> None:
             {
                 "raw_complete_domain_upper_seconds": layer_upper,
                 "reported_outward_rounded_upper_seconds": reported,
+                "closed_heading_ranges": localizations,
                 "refined_heading_shards": replacements,
             },
             indent=2,

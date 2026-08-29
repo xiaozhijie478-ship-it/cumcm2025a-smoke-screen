@@ -1,0 +1,67 @@
+{
+  "parameterization": "ux_uy_explosion_delay",
+  "dt": 0.05,
+  "fine_dt": 0.005,
+  "refine_below": 10.0,
+  "preset": "full",
+  "cover_end": 13.942236249790831,
+  "distance_guard": 1e-08,
+  "time_guard": 1e-12,
+  "n_phi_per_rim": 16,
+  "center_cells": 4,
+  "single_cumulative_cap": null,
+  "consistent_center_cells": false,
+  "required_active_bombs": [
+    1,
+    2,
+    3
+  ],
+  "event_cells": 4,
+  "joint_cell_consistency": true,
+  "strong_branch_below": null,
+  "explosion_order": [
+    2,
+    3,
+    1
+  ],
+  "fine_center_cells": 8,
+  "fine_event_cells": 8,
+  "cell_refine_below": 12.5,
+  "theta_range_deg": [
+    180.0,
+    182.81250000000003
+  ],
+  "target": 8.0,
+  "root_upper": 12.99223624979096,
+  "global_upper": 8.889999999999755,
+  "processed": 20,
+  "open": 13,
+  "pruned": 8,
+  "infeasible": 0,
+  "deepest": 8,
+  "target_certified": false,
+  "worst_box": {
+    "lo": [
+      -140.0,
+      -6.8694744058385435,
+      9.463897656119268,
+      2.617779531223854,
+      7.9711181248954155,
+      6.228338593671561,
+      0.0,
+      0.0
+    ],
+    "hi": [
+      -69.91568193436207,
+      1.7145055188062946e-14,
+      10.956677187343123,
+      4.235559062447708,
+      10.956677187343123,
+      10.956677187343123,
+      4.235559062447708,
+      8.956677187343123
+    ],
+    "depth": 7,
+    "split_index": 4
+  }
+}
