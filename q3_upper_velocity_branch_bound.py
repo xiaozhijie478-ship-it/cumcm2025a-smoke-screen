@@ -561,6 +561,9 @@ def branch_bound(
     joint_cell_consistency: bool = False,
     strong_branch_below: float | None = None,
     explosion_order: tuple[int, ...] = (),
+    fine_center_cells: int | None = None,
+    fine_event_cells: int | None = None,
+    cell_refine_below: float | None = None,
 ) -> dict[str, object]:
     points = legacy.witnesses(n_phi)
     root = contract(
@@ -582,9 +585,11 @@ def branch_bound(
             theta_range,
             explosion_order,
         )
-        if fine_dt is not None and coarse <= refine_below:
-            return min(
-                coarse,
+        upper = coarse
+        use_fine_time = fine_dt is not None and coarse <= refine_below
+        if use_fine_time:
+            upper = min(
+                upper,
                 upper_duration(
                     box,
                     fine_dt,
@@ -599,7 +604,28 @@ def branch_bound(
                     explosion_order,
                 ),
             )
-        return coarse
+        if (
+            cell_refine_below is not None
+            and coarse <= cell_refine_below
+            and (fine_center_cells is not None or fine_event_cells is not None)
+        ):
+            upper = min(
+                upper,
+                upper_duration(
+                    box,
+                    fine_dt if use_fine_time else dt,
+                    points,
+                    fine_center_cells or center_cells,
+                    single_cumulative_cap,
+                    consistent_center_cells,
+                    required_active,
+                    fine_event_cells or event_cells,
+                    joint_cell_consistency,
+                    theta_range,
+                    explosion_order,
+                ),
+            )
+        return upper
 
     root_upper = bound(root)
     root_pruned = root_upper <= target
@@ -687,6 +713,9 @@ def branch_bound(
         "joint_cell_consistency": joint_cell_consistency,
         "strong_branch_below": strong_branch_below,
         "explosion_order": [index + 1 for index in explosion_order],
+        "fine_center_cells": fine_center_cells,
+        "fine_event_cells": fine_event_cells,
+        "cell_refine_below": cell_refine_below,
         "theta_range_deg": None
         if theta_range is None
         else [math.degrees(value) for value in theta_range],
@@ -729,6 +758,15 @@ def self_test() -> None:
         joint_cell_consistency=True,
     )
     assert paired >= 7.650405706
+    finer_cells = upper_duration(
+        incumbent,
+        0.01,
+        points,
+        center_cells=8,
+        event_cells=8,
+        joint_cell_consistency=True,
+    )
+    assert 7.650405706 <= finer_cells <= paired + 1e-9
 
     # The interval cloud at a physical point must reproduce Strategy exactly.
     times = np.array([5.0, 9.0, 12.0])
@@ -846,6 +884,17 @@ def main() -> None:
         "--explosion-order",
         help="optional comma-separated 1-based nondecreasing explosion order",
     )
+    parser.add_argument(
+        "--fine-center-cells", type=int, choices=[2, 4, 8]
+    )
+    parser.add_argument(
+        "--fine-event-cells", type=int, choices=[2, 4, 8]
+    )
+    parser.add_argument(
+        "--cell-refine-below",
+        type=float,
+        help="apply the finer common-parameter cells only below this upper bound",
+    )
     parser.add_argument("--preset", choices=["full", "immediate", "two"], default="full")
     parser.add_argument(
         "--output",
@@ -895,6 +944,9 @@ def main() -> None:
         args.joint_cell_consistency,
         args.strong_branch_below,
         explosion_order,
+        args.fine_center_cells,
+        args.fine_event_cells,
+        args.cell_refine_below,
     )
     args.output.write_text(json.dumps(result, indent=2), encoding="utf-8")
     print(json.dumps(result, indent=2), flush=True)

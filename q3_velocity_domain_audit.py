@@ -28,6 +28,9 @@ def scan(
     max_nodes: int,
     center_cells: int,
     event_cells: int,
+    fine_center_cells: int | None = None,
+    fine_event_cells: int | None = None,
+    cell_refine_below: float | None = None,
 ) -> dict[str, object]:
     results = []
     width = 360.0 / shards
@@ -51,6 +54,9 @@ def scan(
                 event_cells,
                 tuple(math.radians(value) for value in angle),
                 True,
+                fine_center_cells=fine_center_cells,
+                fine_event_cells=fine_event_cells,
+                cell_refine_below=cell_refine_below,
             )
             results.append(
                 {
@@ -112,6 +118,9 @@ def main() -> None:
     parser.add_argument("--max-nodes", type=int, default=0)
     parser.add_argument("--center-cells", type=int, choices=[1, 2, 4, 8], default=4)
     parser.add_argument("--event-cells", type=int, choices=[1, 2, 4, 8], default=4)
+    parser.add_argument("--fine-center-cells", type=int, choices=[2, 4, 8])
+    parser.add_argument("--fine-event-cells", type=int, choices=[2, 4, 8])
+    parser.add_argument("--cell-refine-below", type=float)
     parser.add_argument(
         "--output",
         type=Path,
@@ -135,6 +144,9 @@ def main() -> None:
         args.max_nodes,
         args.center_cells,
         args.event_cells,
+        args.fine_center_cells,
+        args.fine_event_cells,
+        args.cell_refine_below,
     )
     args.output.write_text(json.dumps(result, indent=2), encoding="utf-8")
     print(json.dumps(result["summary"], indent=2), flush=True)

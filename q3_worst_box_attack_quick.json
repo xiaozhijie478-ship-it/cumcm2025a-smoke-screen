@@ -1,0 +1,284 @@
+{
+  "seeds": [
+    20260829,
+    20260830
+  ],
+  "quick": true,
+  "results": [
+    {
+      "artifact": "q3_two_order_12_theta1771875_180_nodes500.json",
+      "box_upper_seconds": 8.269999999999968,
+      "feasible_candidate_found": true,
+      "sampled_joint_seconds": 3.5045833552040158,
+      "analytic_single_ball_union_seconds": 3.504581464658056,
+      "max_constraint_violation": 0.0,
+      "x_theta_speed_explosions_delays": [
+        3.1163001260836456,
+        135.8932868683407,
+        3.0387313857592098,
+        7.813891315471317,
+        66.99917080747261,
+        3.036742407486696,
+        4.332900979282151,
+        0.0
+      ],
+      "strategy": [
+        {
+          "theta_deg": 178.5508449206792,
+          "speed": 135.8932868683407,
+          "release_time": 0.001988978272513542,
+          "explosion_time": 3.0387313857592098,
+          "delay": 3.036742407486696
+        },
+        {
+          "theta_deg": 178.5508449206792,
+          "speed": 135.8932868683407,
+          "release_time": 3.4809903361891665,
+          "explosion_time": 7.813891315471317,
+          "delay": 4.332900979282151
+        },
+        {
+          "theta_deg": 178.5508449206792,
+          "speed": 135.8932868683407,
+          "release_time": 66.99917080747261,
+          "explosion_time": 66.99917080747261,
+          "delay": 0.0
+        }
+      ],
+      "runs": [
+        {
+          "seed": 20260829,
+          "guided_objective": 3.4703050049713755,
+          "coarse_joint_seconds": 3.4618169657180804,
+          "max_constraint_violation": 0.0
+        },
+        {
+          "seed": 20260830,
+          "guided_objective": 3.512087830325349,
+          "coarse_joint_seconds": 3.5045713345897047,
+          "max_constraint_violation": 0.0
+        }
+      ]
+    },
+    {
+      "artifact": "q3_order_123_theta1771875_180_nodes100.json",
+      "box_upper_seconds": 11.000000000000096,
+      "feasible_candidate_found": true,
+      "sampled_joint_seconds": 4.711392872338151,
+      "analytic_single_ball_union_seconds": 4.711200100522166,
+      "max_constraint_violation": 0.0,
+      "x_theta_speed_explosions_delays": [
+        3.139363814101363,
+        104.8251234775741,
+        0.17592211888000908,
+        2.4432482329221927,
+        7.62225961455284,
+        0.04478213951896415,
+        0.990891760402683,
+        4.495927660169994
+      ],
+      "strategy": [
+        {
+          "theta_deg": 179.87229690410086,
+          "speed": 104.8251234775741,
+          "release_time": 0.13113997936104493,
+          "explosion_time": 0.17592211888000908,
+          "delay": 0.04478213951896415
+        },
+        {
+          "theta_deg": 179.87229690410086,
+          "speed": 104.8251234775741,
+          "release_time": 1.4523564725195097,
+          "explosion_time": 2.4432482329221927,
+          "delay": 0.990891760402683
+        },
+        {
+          "theta_deg": 179.87229690410086,
+          "speed": 104.8251234775741,
+          "release_time": 3.126331954382846,
+          "explosion_time": 7.62225961455284,
+          "delay": 4.495927660169994
+        }
+      ],
+      "runs": [
+        {
+          "seed": 20260829,
+          "guided_objective": 2.589873582600972,
+          "coarse_joint_seconds": 2.5474537441250034,
+          "max_constraint_violation": 0.0
+        },
+        {
+          "seed": 20260830,
+          "guided_objective": 4.693732263378059,
+          "coarse_joint_seconds": 4.713817293574083,
+          "max_constraint_violation": 0.0
+        }
+      ]
+    },
+    {
+      "artifact": "q3_order_132_theta1771875_180_nodes100.json",
+      "box_upper_seconds": 10.650000000000116,
+      "feasible_candidate_found": true,
+      "sampled_joint_seconds": 3.9943172838016077,
+      "analytic_single_ball_union_seconds": 3.9947363241885405,
+      "max_constraint_violation": 0.0,
+      "x_theta_speed_explosions_delays": [
+        3.1071261402828463,
+        106.06241241783401,
+        2.6006654753827627,
+        10.526428880539738,
+        8.607460096420777,
+        2.5992264346364906,
+        8.90442103631007,
+        2.4092776917448306
+      ],
+      "strategy": [
+        {
+          "theta_deg": 178.02521425298045,
+          "speed": 106.06241241783401,
+          "release_time": 0.0014390407462721022,
+          "explosion_time": 2.6006654753827627,
+          "delay": 2.5992264346364906
+        },
+        {
+          "theta_deg": 178.02521425298045,
+          "speed": 106.06241241783401,
+          "release_time": 1.6220078442296675,
+          "explosion_time": 10.526428880539738,
+          "delay": 8.90442103631007
+        },
+        {
+          "theta_deg": 178.02521425298045,
+          "speed": 106.06241241783401,
+          "release_time": 6.198182404675946,
+          "explosion_time": 8.607460096420777,
+          "delay": 2.4092776917448306
+        }
+      ],
+      "runs": [
+        {
+          "seed": 20260829,
+          "guided_objective": 3.982982468538609,
+          "coarse_joint_seconds": 3.9912118707363495,
+          "max_constraint_violation": 0.0
+        },
+        {
+          "seed": 20260830,
+          "guided_objective": 3.924211610287416,
+          "coarse_joint_seconds": 3.9291057766620527,
+          "max_constraint_violation": 0.0
+        }
+      ]
+    },
+    {
+      "artifact": "q3_order_213_theta1771875_180_nodes100.json",
+      "box_upper_seconds": 10.400000000000095,
+      "feasible_candidate_found": true,
+      "sampled_joint_seconds": 4.537020903890086,
+      "analytic_single_ball_union_seconds": 4.536987414543151,
+      "max_constraint_violation": 0.0,
+      "x_theta_speed_explosions_delays": [
+        3.093340370978739,
+        77.04545329501093,
+        2.584716068258098,
+        2.121326891533709,
+        10.553922094524834,
+        2.5751534178930884,
+        0.15375842716595933,
+        3.386284641342852
+      ],
+      "strategy": [
+        {
+          "theta_deg": 177.2353478545141,
+          "speed": 77.04545329501093,
+          "release_time": 0.009562650365009695,
+          "explosion_time": 2.584716068258098,
+          "delay": 2.5751534178930884
+        },
+        {
+          "theta_deg": 177.2353478545141,
+          "speed": 77.04545329501093,
+          "release_time": 1.9675684643677496,
+          "explosion_time": 2.121326891533709,
+          "delay": 0.15375842716595933
+        },
+        {
+          "theta_deg": 177.2353478545141,
+          "speed": 77.04545329501093,
+          "release_time": 7.167637453181982,
+          "explosion_time": 10.553922094524834,
+          "delay": 3.386284641342852
+        }
+      ],
+      "runs": [
+        {
+          "seed": 20260829,
+          "guided_objective": 4.543853854332501,
+          "coarse_joint_seconds": 4.536893375189482,
+          "max_constraint_violation": 0.0
+        },
+        {
+          "seed": 20260830,
+          "guided_objective": 4.544001935670648,
+          "coarse_joint_seconds": 4.537032866119343,
+          "max_constraint_violation": 0.0
+        }
+      ]
+    },
+    {
+      "artifact": "q3_order_231_theta1771875_180_nodes500.json",
+      "box_upper_seconds": 8.2549999999999,
+      "feasible_candidate_found": true,
+      "sampled_joint_seconds": 2.5724444209644233,
+      "analytic_single_ball_union_seconds": 2.5723785326572717,
+      "max_constraint_violation": 0.0,
+      "x_theta_speed_explosions_delays": [
+        3.1400736228871136,
+        139.9478144760804,
+        10.744025873666194,
+        3.2490457952184433,
+        9.09245788940499,
+        10.4867811882673,
+        1.088467128078837,
+        5.391627544905005
+      ],
+      "strategy": [
+        {
+          "theta_deg": 179.91296595178568,
+          "speed": 139.9478144760804,
+          "release_time": 0.257244685398895,
+          "explosion_time": 10.744025873666194,
+          "delay": 10.4867811882673
+        },
+        {
+          "theta_deg": 179.91296595178568,
+          "speed": 139.9478144760804,
+          "release_time": 2.1605786671396063,
+          "explosion_time": 3.2490457952184433,
+          "delay": 1.088467128078837
+        },
+        {
+          "theta_deg": 179.91296595178568,
+          "speed": 139.9478144760804,
+          "release_time": 3.700830344499985,
+          "explosion_time": 9.09245788940499,
+          "delay": 5.391627544905005
+        }
+      ],
+      "runs": [
+        {
+          "seed": 20260829,
+          "guided_objective": 2.566897574299547,
+          "coarse_joint_seconds": 2.568795727314809,
+          "max_constraint_violation": 0.0
+        },
+        {
+          "seed": 20260830,
+          "guided_objective": 2.5712961291114658,
+          "coarse_joint_seconds": 2.5723977681650627,
+          "max_constraint_violation": 0.0
+        }
+      ]
+    }
+  ]
+}

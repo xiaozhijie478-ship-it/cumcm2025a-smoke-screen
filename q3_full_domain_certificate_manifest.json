@@ -2,8 +2,8 @@
   "schema": "q3-contributor-domain-certificate-manifest-v1",
   "date": "2026-08-29",
   "incumbent_seconds": 7.650405706,
-  "raw_complete_domain_upper_seconds": 11.600000000000126,
-  "reported_outward_rounded_upper_seconds": 11.601,
+  "raw_complete_domain_upper_seconds": 11.450000000000122,
+  "reported_outward_rounded_upper_seconds": 11.451,
   "layers": {
     "one_contributor": {
       "upper_seconds": 7.0,
@@ -62,8 +62,8 @@
       }
     },
     "three_contributors": {
-      "raw_upper_seconds": 11.600000000000126,
-      "reported_outward_rounded_upper_seconds": 11.601,
+      "raw_upper_seconds": 11.450000000000122,
+      "reported_outward_rounded_upper_seconds": 11.451,
       "status": "complete_heading_domain_bounded_target_8_not_fully_certified",
       "global_evidence": "q3_velocity_three_nodes100_128.json",
       "remaining_target_8_heading_deg": [
@@ -73,8 +73,40 @@
       "localization_evidence": [
         "q3_upper_three_theta1575_16875_target8.json",
         "q3_upper_three_theta185625_19125_target8.json"
+      ],
+      "refined_heading_shards": [
+        {
+          "heading_deg": [
+            174.375,
+            177.1875
+          ],
+          "raw_upper_seconds": 11.450000000000122,
+          "explosion_order_evidence": [
+            "q3_three_theta174375_1771875_order_123_adaptive_nodes100.json",
+            "q3_three_theta174375_1771875_order_132_adaptive_nodes20.json",
+            "q3_three_theta174375_1771875_order_213_adaptive_nodes20.json",
+            "q3_three_theta174375_1771875_order_231_adaptive_nodes20.json",
+            "q3_three_theta174375_1771875_order_312_adaptive_nodes20.json",
+            "q3_three_theta174375_1771875_order_321_adaptive_nodes20.json"
+          ]
+        },
+        {
+          "heading_deg": [
+            177.1875,
+            180.0
+          ],
+          "raw_upper_seconds": 10.650000000000116,
+          "explosion_order_evidence": [
+            "q3_order_123_adaptive_cells_nodes100.json",
+            "q3_order_132_theta1771875_180_nodes100.json",
+            "q3_order_213_theta1771875_180_nodes100.json",
+            "q3_order_231_theta1771875_180_nodes500.json",
+            "q3_order_312_theta1771875_180_target8.json",
+            "q3_order_321_theta1771875_180_target8.json"
+          ]
+        }
       ]
     }
   },
-  "claim_boundary": "The outward-rounded 11.601 s value is a protected numerical upper bound over the complete Q3 domain, not a proof that the incumbent is globally near-optimal."
+  "claim_boundary": "The outward-rounded 11.451 s value is a protected numerical upper bound over the complete Q3 domain, not a proof that the incumbent is globally near-optimal."
 }
